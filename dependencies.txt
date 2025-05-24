@@ -1,0 +1,14 @@
+# College Notes & PYQs Portal Dependencies
+# 
+# To install all dependencies, run:
+# pip install -r dependencies.txt
+#
+# Or install individually:
+# pip install flask flask-sqlalchemy werkzeug gunicorn email-validator psycopg2-binary
+
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.0
+Werkzeug>=3.0.0
+gunicorn>=21.0.0
+email-validator>=2.0.0
+psycopg2-binary>=2.9.0
