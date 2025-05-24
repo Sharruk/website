@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Files - College Notes & PYQs Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="h2 mb-2">
+                <i class="fas fa-cloud-upload-alt text-primary me-2"></i>
+                Upload Study Materials
+            </h1>
+            <p class="text-muted">Share your notes, study materials, and previous year question papers with others</p>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-upload me-2"></i>
+                    Select Files to Upload
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <!-- File Selection -->
+                    <div class="mb-4">
+                        <label for="files" class="form-label fw-semibold">Choose Files</label>
+                        <input type="file" 
+                               class="form-control form-control-lg" 
+                               id="files" 
+                               name="files" 
+                               multiple 
+                               accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.bmp,.zip,.rar,.7z,.tar,.gz"
+                               required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            You can select multiple files at once. Maximum size per file: 16MB.
+                        </div>
+                    </div>
+
+                    <!-- File Preview Area -->
+                    <div id="filePreview" class="mb-4" style="display: none;">
+                        <h6 class="fw-semibold mb-3">Selected Files:</h6>
+                        <div id="fileList" class="border rounded p-3 bg-light"></div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" class="mb-4" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Uploading files...</small>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Files
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Library
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- File Type Information -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle text-info me-2"></i>
+                    Supported File Types
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Documents</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-file-pdf text-danger me-1"></i> PDF Documents (.pdf)</li>
+                            <li><i class="fas fa-file-word text-primary me-1"></i> Word Documents (.doc, .docx)</li>
+                            <li><i class="fas fa-file-alt text-secondary me-1"></i> Text Files (.txt, .rtf, .odt)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Presentations & Data</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-file-powerpoint text-warning me-1"></i> Presentations (.ppt, .pptx)</li>
+                            <li><i class="fas fa-file-excel text-success me-1"></i> Spreadsheets (.xls, .xlsx, .csv)</li>
+                            <li><i class="fas fa-file-archive text-info me-1"></i> Archives (.zip, .rar, .7z)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> Use clear, descriptive filenames to help others find your materials easily.
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Guidelines -->
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Upload Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Ensure you have the right to share the files you're uploading</li>
+                    <li>Use descriptive filenames (e.g., "Mathematics_Calculus_Notes_2023.pdf")</li>
+                    <li>Maximum file size is 16MB per file</li>
+                    <li>Duplicate filenames will be automatically renamed</li>
+                    <li>Only upload academic materials relevant to studies</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
