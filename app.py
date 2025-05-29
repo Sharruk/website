@@ -158,6 +158,20 @@ def upload():
                         
                         # Save the file
                         file.save(filepath)
+                        
+                        # Save file metadata to database if available
+                        if database_url:
+                            new_file = UploadedFile(
+                                filename=filename,
+                                original_filename=file.filename,
+                                file_size=file.content_length or os.path.getsize(filepath),
+                                file_extension=filename.rsplit('.', 1)[1].lower() if '.' in filename else '',
+                                category=get_file_category(filename),
+                                file_path=filepath
+                            )
+                            db.session.add(new_file)
+                            db.session.commit()
+                        
                         uploaded_count += 1
                         app.logger.info(f"File uploaded: {filename}")
                     
@@ -203,6 +217,14 @@ def delete(filename):
         filename = secure_filename(filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
+        # Delete from database if available
+        if database_url:
+            db_file = UploadedFile.query.filter_by(filename=filename).first()
+            if db_file:
+                db.session.delete(db_file)
+                db.session.commit()
+        
+        # Delete physical file
         if os.path.exists(filepath) and os.path.isfile(filepath):
             os.remove(filepath)
             flash(f'File "{filename}" deleted successfully', 'success')
