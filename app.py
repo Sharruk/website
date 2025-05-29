@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from models import db, UploadedFile
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -12,6 +13,17 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Database configuration
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -28,6 +40,11 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Create database tables
+if database_url:
+    with app.app_context():
+        db.create_all()
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -66,23 +83,34 @@ def get_file_category(filename):
 def index():
     """Homepage showing all uploaded files"""
     try:
-        files = []
-        if os.path.exists(UPLOAD_FOLDER):
-            for filename in os.listdir(UPLOAD_FOLDER):
-                if filename != '.gitkeep':
-                    filepath = os.path.join(UPLOAD_FOLDER, filename)
-                    if os.path.isfile(filepath):
-                        file_stat = os.stat(filepath)
-                        files.append({
-                            'name': filename,
-                            'size': get_file_size(filepath),
-                            'category': get_file_category(filename),
-                            'upload_date': datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
-                            'extension': filename.rsplit('.', 1)[1].lower() if '.' in filename else 'none'
-                        })
-        
-        # Sort files by upload date (newest first)
-        files.sort(key=lambda x: x['upload_date'], reverse=True)
+        if database_url:
+            # Get files from database
+            uploaded_files = UploadedFile.query.order_by(UploadedFile.upload_date.desc()).all()
+            files = []
+            for db_file in uploaded_files:
+                files.append({
+                    'name': db_file.filename,
+                    'size': db_file.get_file_size_formatted(),
+                    'category': db_file.category,
+                    'upload_date': db_file.upload_date.strftime('%Y-%m-%d %H:%M'),
+                    'extension': db_file.file_extension
+                })
+        else:
+            # Fallback to file system
+            files = []
+            if os.path.exists(UPLOAD_FOLDER):
+                for filename in os.listdir(UPLOAD_FOLDER):
+                    if filename != '.gitkeep':
+                        filepath = os.path.join(UPLOAD_FOLDER, filename)
+                        if os.path.isfile(filepath):
+                            file_stat = os.stat(filepath)
+                            files.append({
+                                'name': filename,
+                                'size': get_file_size(filepath),
+                                'category': get_file_category(filename),
+                                'upload_date': datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
+                                'extension': filename.rsplit('.', 1)[1].lower() if '.' in filename else 'none'
+                            })
         
         # Group files by category
         categories = {}
