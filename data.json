@@ -1,0 +1,92 @@
+{
+  "departments": {
+    "computer_science": {
+      "name": "Computer Science",
+      "semesters": {
+        "1": {
+          "name": "Semester 1"
+        },
+        "2": {
+          "name": "Semester 2"
+        },
+        "3": {
+          "name": "Semester 3"
+        },
+        "4": {
+          "name": "Semester 4"
+        },
+        "5": {
+          "name": "Semester 5"
+        },
+        "6": {
+          "name": "Semester 6"
+        },
+        "7": {
+          "name": "Semester 7"
+        },
+        "8": {
+          "name": "Semester 8"
+        }
+      }
+    },
+    "mechanical": {
+      "name": "Mechanical Engineering",
+      "semesters": {
+        "1": {
+          "name": "Semester 1"
+        },
+        "2": {
+          "name": "Semester 2"
+        },
+        "3": {
+          "name": "Semester 3"
+        },
+        "4": {
+          "name": "Semester 4"
+        },
+        "5": {
+          "name": "Semester 5"
+        },
+        "6": {
+          "name": "Semester 6"
+        },
+        "7": {
+          "name": "Semester 7"
+        },
+        "8": {
+          "name": "Semester 8"
+        }
+      }
+    },
+    "electrical": {
+      "name": "Electrical Engineering",
+      "semesters": {
+        "1": {
+          "name": "Semester 1"
+        },
+        "2": {
+          "name": "Semester 2"
+        },
+        "3": {
+          "name": "Semester 3"
+        },
+        "4": {
+          "name": "Semester 4"
+        },
+        "5": {
+          "name": "Semester 5"
+        },
+        "6": {
+          "name": "Semester 6"
+        },
+        "7": {
+          "name": "Semester 7"
+        },
+        "8": {
+          "name": "Semester 8"
+        }
+      }
+    }
+  },
+  "files": []
+}

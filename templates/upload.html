@@ -1,128 +1,169 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Files - College Notes & PYQs Portal{% endblock %}
+{% block title %}Upload Files - College Materials & PYQs Portal{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-2">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Departments</a>
+            </li>
+            <li class="breadcrumb-item active">Upload Files</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <!-- Header -->
-        <div class="text-center mb-4">
-            <h1 class="h2 mb-2">
-                <i class="fas fa-cloud-upload-alt text-primary me-2"></i>
-                Upload Study Materials
-            </h1>
-            <p class="text-muted">Share your notes, study materials, and previous year question papers with others</p>
-        </div>
-
-        <!-- Upload Form -->
-        <div class="card shadow-sm">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-file-upload me-2"></i>
-                    Select Files to Upload
-                </h5>
+                <h4 class="mb-0">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>
+                    Upload Files
+                </h4>
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                    <!-- File Selection -->
-                    <div class="mb-4">
-                        <label for="files" class="form-label fw-semibold">Choose Files</label>
-                        <input type="file" 
-                               class="form-control form-control-lg" 
-                               id="files" 
-                               name="files" 
-                               multiple 
-                               accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.bmp,.zip,.rar,.7z,.tar,.gz"
-                               required>
+                    <!-- Department Selection -->
+                    <div class="mb-3">
+                        <label for="department" class="form-label">
+                            <i class="fas fa-university me-1"></i>Department
+                        </label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="">Select Department</option>
+                            {% for dept_id, department in departments.items() %}
+                            <option value="{{ dept_id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Semester Selection -->
+                    <div class="mb-3">
+                        <label for="semester" class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i>Semester
+                        </label>
+                        <select class="form-select" id="semester" name="semester" required>
+                            <option value="">Select Semester</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div class="mb-3">
+                        <label for="category" class="form-label">
+                            <i class="fas fa-folder me-1"></i>Category
+                        </label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="CAT">CAT (Continuous Assessment Test)</option>
+                            <option value="ESE">ESE (End Semester Examination)</option>
+                            <option value="SAT">SAT (Semester Assessment Test)</option>
+                            <option value="Practical">Practical</option>
+                        </select>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">
+                            <i class="fas fa-book me-1"></i>Subject
+                        </label>
+                        <input type="text" class="form-control" id="subject" name="subject" 
+                               placeholder="e.g., Data Structures, Mathematics, Physics" required>
+                    </div>
+
+                    <!-- Custom File Name -->
+                    <div class="mb-3">
+                        <label for="filename" class="form-label">
+                            <i class="fas fa-file-signature me-1"></i>File Name (Optional)
+                        </label>
+                        <input type="text" class="form-control" id="filename" name="filename" 
+                               placeholder="Custom name for the file (leave blank to use original)">
                         <div class="form-text">
-                            <i class="fas fa-info-circle text-primary me-1"></i>
-                            You can select multiple files at once. Maximum size per file: 16MB.
+                            If provided, this will be the display name for the file.
                         </div>
                     </div>
 
-                    <!-- File Preview Area -->
-                    <div id="filePreview" class="mb-4" style="display: none;">
-                        <h6 class="fw-semibold mb-3">Selected Files:</h6>
-                        <div id="fileList" class="border rounded p-3 bg-light"></div>
-                    </div>
-
-                    <!-- Upload Progress -->
-                    <div id="uploadProgress" class="mb-4" style="display: none;">
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" 
-                                 style="width: 0%"></div>
+                    <!-- File Upload -->
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file me-1"></i>Select File
+                        </label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">
+                            Supported formats: PDF, DOC, DOCX, TXT, PPT, PPTX, XLS, XLSX, Images, Archives
                         </div>
-                        <small class="text-muted mt-1 d-block">Uploading files...</small>
                     </div>
 
-                    <!-- Upload Button -->
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
-                            <i class="fas fa-upload me-2"></i>
-                            Upload Files
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-upload me-2"></i>Upload File
                         </button>
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Back to Library
-                        </a>
                     </div>
                 </form>
             </div>
         </div>
-
-        <!-- File Type Information -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-question-circle text-info me-2"></i>
-                    Supported File Types
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Documents</h6>
-                        <ul class="list-unstyled small">
-                            <li><i class="fas fa-file-pdf text-danger me-1"></i> PDF Documents (.pdf)</li>
-                            <li><i class="fas fa-file-word text-primary me-1"></i> Word Documents (.doc, .docx)</li>
-                            <li><i class="fas fa-file-alt text-secondary me-1"></i> Text Files (.txt, .rtf, .odt)</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-success">Presentations & Data</h6>
-                        <ul class="list-unstyled small">
-                            <li><i class="fas fa-file-powerpoint text-warning me-1"></i> Presentations (.ppt, .pptx)</li>
-                            <li><i class="fas fa-file-excel text-success me-1"></i> Spreadsheets (.xls, .xlsx, .csv)</li>
-                            <li><i class="fas fa-file-archive text-info me-1"></i> Archives (.zip, .rar, .7z)</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="alert alert-info mt-3 mb-0">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    <strong>Tip:</strong> Use clear, descriptive filenames to help others find your materials easily.
-                </div>
-            </div>
-        </div>
-
-        <!-- Upload Guidelines -->
-        <div class="card mt-4 border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h6 class="mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Upload Guidelines
-                </h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0">
-                    <li>Ensure you have the right to share the files you're uploading</li>
-                    <li>Use descriptive filenames (e.g., "Mathematics_Calculus_Notes_2023.pdf")</li>
-                    <li>Maximum file size is 16MB per file</li>
-                    <li>Duplicate filenames will be automatically renamed</li>
-                    <li>Only upload academic materials relevant to studies</li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Department and semester data
+const departmentData = {{ departments|tojson }};
+
+// Handle department selection
+document.getElementById('department').addEventListener('change', function() {
+    const deptId = this.value;
+    const semesterSelect = document.getElementById('semester');
+    
+    // Clear existing options
+    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+    
+    if (deptId && departmentData[deptId] && departmentData[deptId].semesters) {
+        const semesters = departmentData[deptId].semesters;
+        
+        for (const [semId, semData] of Object.entries(semesters)) {
+            const option = document.createElement('option');
+            option.value = semId;
+            option.textContent = semData.name;
+            semesterSelect.appendChild(option);
+        }
+    }
+});
+
+// Form validation
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const department = document.getElementById('department').value;
+    const semester = document.getElementById('semester').value;
+    const category = document.getElementById('category').value;
+    const subject = document.getElementById('subject').value.trim();
+    const file = document.getElementById('file').files[0];
+    
+    if (!department || !semester || !category || !subject || !file) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    submitBtn.disabled = true;
+});
+
+// File name suggestion
+document.getElementById('file').addEventListener('change', function() {
+    const file = this.files[0];
+    const filenameInput = document.getElementById('filename');
+    
+    if (file && !filenameInput.value) {
+        // Remove extension for suggestion
+        const name = file.name.substring(0, file.name.lastIndexOf('.'));
+        filenameInput.placeholder = `Suggestion: ${name}`;
+    }
+});
+</script>
 {% endblock %}
