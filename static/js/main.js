@@ -1,204 +1,94 @@
-// Main JavaScript for College Notes & PYQs Portal
+// Main JavaScript for College Materials & PYQs Portal
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('College Notes & PYQs Portal loaded');
+    console.log('College Materials & PYQs Portal loaded');
     
-    // Initialize file upload functionality
-    initializeFileUpload();
+    // Initialize animations
+    initializeAnimations();
     
     // Initialize tooltips
     initializeTooltips();
     
-    // Initialize animations
-    initializeAnimations();
+    // Initialize search functionality
+    initializeSearch();
+    
+    // Initialize smooth scrolling
+    initializeSmoothScrolling();
 });
 
 /**
- * Initialize file upload functionality
+ * Initialize animations for page elements
  */
-function initializeFileUpload() {
-    const fileInput = document.getElementById('files');
-    const filePreview = document.getElementById('filePreview');
-    const fileList = document.getElementById('fileList');
-    const uploadForm = document.getElementById('uploadForm');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const uploadProgress = document.getElementById('uploadProgress');
-    
-    if (!fileInput) return;
-    
-    // Handle file selection
-    fileInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        displayFilePreview(files);
+function initializeAnimations() {
+    // Add fade-in animation to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
     });
     
-    // Handle form submission
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-            const files = fileInput.files;
-            if (files.length === 0) {
-                e.preventDefault();
-                showAlert('Please select at least one file to upload.', 'warning');
-                return;
-            }
-            
-            // Validate file sizes
-            let hasLargeFile = false;
-            const maxSize = 16 * 1024 * 1024; // 16MB
-            
-            Array.from(files).forEach(file => {
-                if (file.size > maxSize) {
-                    hasLargeFile = true;
-                }
-            });
-            
-            if (hasLargeFile) {
-                e.preventDefault();
-                showAlert('Some files are larger than 16MB. Please reduce file sizes and try again.', 'error');
-                return;
-            }
-            
-            // Show upload progress
-            showUploadProgress();
-        });
+    // Add slide-in animation to breadcrumbs
+    const breadcrumb = document.querySelector('.breadcrumb');
+    if (breadcrumb) {
+        breadcrumb.classList.add('slide-in');
     }
+}
+
+/**
+ * Initialize Bootstrap tooltips
+ */
+function initializeTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+/**
+ * Initialize search functionality for file tables
+ */
+function initializeSearch() {
+    const searchInput = document.getElementById('fileSearch');
+    if (!searchInput) return;
     
-    /**
-     * Display preview of selected files
-     */
-    function displayFilePreview(files) {
-        if (files.length === 0) {
-            filePreview.style.display = 'none';
-            return;
-        }
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const tableRows = document.querySelectorAll('tbody tr');
+        const cards = document.querySelectorAll('.file-card');
         
-        fileList.innerHTML = '';
-        
-        files.forEach((file, index) => {
-            const fileItem = createFileItem(file, index);
-            fileList.appendChild(fileItem);
+        // Search in table view
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const isVisible = text.includes(searchTerm);
+            row.style.display = isVisible ? '' : 'none';
         });
         
-        filePreview.style.display = 'block';
-        filePreview.classList.add('fade-in');
-    }
-    
-    /**
-     * Create file item element for preview
-     */
-    function createFileItem(file, index) {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        
-        const fileIcon = getFileIcon(file.name);
-        const fileSize = formatFileSize(file.size);
-        const fileName = file.name.length > 40 ? file.name.substring(0, 40) + '...' : file.name;
-        
-        fileItem.innerHTML = `
-            <div class="file-info">
-                <div class="d-flex align-items-center">
-                    <i class="fas ${fileIcon} me-2"></i>
-                    <span class="fw-medium">${fileName}</span>
-                </div>
-                <small class="file-size">${fileSize}</small>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        
-        return fileItem;
-    }
-    
-    /**
-     * Show upload progress
-     */
-    function showUploadProgress() {
-        if (uploadProgress && uploadBtn) {
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
-            uploadProgress.style.display = 'block';
-            
-            // Simulate progress (since we can't track real progress easily)
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress > 90) progress = 90;
-                
-                const progressBar = uploadProgress.querySelector('.progress-bar');
-                progressBar.style.width = progress + '%';
-                
-                if (progress >= 90) {
-                    clearInterval(interval);
-                }
-            }, 500);
-        }
-    }
+        // Search in card view
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            const isVisible = text.includes(searchTerm);
+            card.closest('.col-md-6').style.display = isVisible ? '' : 'none';
+        });
+    });
 }
 
 /**
- * Get appropriate icon for file type
+ * Initialize smooth scrolling for anchor links
  */
-function getFileIcon(filename) {
-    const extension = filename.split('.').pop().toLowerCase();
-    
-    const icons = {
-        'pdf': 'fa-file-pdf text-danger',
-        'doc': 'fa-file-word text-primary',
-        'docx': 'fa-file-word text-primary',
-        'txt': 'fa-file-alt text-secondary',
-        'rtf': 'fa-file-alt text-secondary',
-        'odt': 'fa-file-alt text-secondary',
-        'ppt': 'fa-file-powerpoint text-warning',
-        'pptx': 'fa-file-powerpoint text-warning',
-        'xls': 'fa-file-excel text-success',
-        'xlsx': 'fa-file-excel text-success',
-        'csv': 'fa-file-excel text-success',
-        'jpg': 'fa-file-image text-info',
-        'jpeg': 'fa-file-image text-info',
-        'png': 'fa-file-image text-info',
-        'gif': 'fa-file-image text-info',
-        'bmp': 'fa-file-image text-info',
-        'zip': 'fa-file-archive text-purple',
-        'rar': 'fa-file-archive text-purple',
-        '7z': 'fa-file-archive text-purple',
-        'tar': 'fa-file-archive text-purple',
-        'gz': 'fa-file-archive text-purple'
-    };
-    
-    return icons[extension] || 'fa-file text-secondary';
-}
-
-/**
- * Format file size for display
- */
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-/**
- * Remove file from selection (placeholder function)
- */
-function removeFile(index) {
-    // This would require rebuilding the FileList, which is read-only
-    // For now, just show a message
-    showAlert('To remove files, please reselect your files.', 'info');
-}
-
-/**
- * Confirm delete action
- */
-function confirmDelete(filename) {
-    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    document.getElementById('fileToDelete').textContent = filename;
-    document.getElementById('confirmDeleteBtn').href = `/delete/${encodeURIComponent(filename)}`;
-    modal.show();
+function initializeSmoothScrolling() {
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
 }
 
 /**
@@ -236,7 +126,6 @@ function getAlertIcon(type) {
     const icons = {
         'success': 'check-circle',
         'error': 'exclamation-triangle',
-        'danger': 'exclamation-triangle',
         'warning': 'exclamation-triangle',
         'info': 'info-circle'
     };
@@ -244,121 +133,168 @@ function getAlertIcon(type) {
 }
 
 /**
- * Initialize tooltips
+ * Get file type icon based on extension
  */
-function initializeTooltips() {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-}
-
-/**
- * Initialize animations
- */
-function initializeAnimations() {
-    // Add fade-in animation to cards
-    const cards = document.querySelectorAll('.card');
-    cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('fade-in');
-    });
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const iconMap = {
+        'pdf': 'fa-file-pdf file-pdf',
+        'doc': 'fa-file-word file-doc',
+        'docx': 'fa-file-word file-doc',
+        'xls': 'fa-file-excel file-xls',
+        'xlsx': 'fa-file-excel file-xls',
+        'ppt': 'fa-file-powerpoint file-ppt',
+        'pptx': 'fa-file-powerpoint file-ppt',
+        'jpg': 'fa-file-image file-img',
+        'jpeg': 'fa-file-image file-img',
+        'png': 'fa-file-image file-img',
+        'gif': 'fa-file-image file-img',
+        'zip': 'fa-file-archive file-zip',
+        'rar': 'fa-file-archive file-zip',
+        '7z': 'fa-file-archive file-zip',
+        'txt': 'fa-file-alt file-default'
+    };
     
-    // Add hover effects to buttons
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-1px)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
+    return iconMap[ext] || 'fa-file file-default';
+}
+
+/**
+ * Format file size for display
+ */
+function formatFileSize(bytes) {
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 B';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
+}
+
+/**
+ * Handle form submissions with loading states
+ */
+function handleFormSubmission(formId, buttonSelector) {
+    const form = document.getElementById(formId);
+    const button = document.querySelector(buttonSelector);
+    
+    if (!form || !button) return;
+    
+    form.addEventListener('submit', function() {
+        button.classList.add('loading');
+        button.disabled = true;
     });
 }
 
 /**
- * Handle drag and drop file upload
+ * Copy text to clipboard
  */
-function initializeDragAndDrop() {
-    const uploadArea = document.querySelector('.card-body');
-    if (!uploadArea) return;
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showAlert('Copied to clipboard!', 'success');
+    }).catch(function() {
+        showAlert('Failed to copy to clipboard', 'error');
+    });
+}
+
+/**
+ * Validate file upload
+ */
+function validateFileUpload(fileInput, allowedExtensions) {
+    const file = fileInput.files[0];
+    if (!file) return false;
+    
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+        showAlert(`File type .${ext} is not allowed`, 'error');
+        return false;
+    }
+    
+    const maxSize = 16 * 1024 * 1024; // 16MB
+    if (file.size > maxSize) {
+        showAlert('File size exceeds 16MB limit', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Initialize file upload drag and drop
+ */
+function initializeDragAndDrop(dropZoneId, fileInputId) {
+    const dropZone = document.getElementById(dropZoneId);
+    const fileInput = document.getElementById(fileInputId);
+    
+    if (!dropZone || !fileInput) return;
     
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        uploadArea.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
+        dropZone.addEventListener(eventName, preventDefaults, false);
     });
     
     ['dragenter', 'dragover'].forEach(eventName => {
-        uploadArea.addEventListener(eventName, highlight, false);
+        dropZone.addEventListener(eventName, highlight, false);
     });
     
     ['dragleave', 'drop'].forEach(eventName => {
-        uploadArea.addEventListener(eventName, unhighlight, false);
+        dropZone.addEventListener(eventName, unhighlight, false);
     });
     
-    uploadArea.addEventListener('drop', handleDrop, false);
+    dropZone.addEventListener('drop', handleDrop, false);
     
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
     
-    function highlight(e) {
-        uploadArea.classList.add('border-primary', 'bg-light');
+    function highlight() {
+        dropZone.classList.add('drag-over');
     }
     
-    function unhighlight(e) {
-        uploadArea.classList.remove('border-primary', 'bg-light');
+    function unhighlight() {
+        dropZone.classList.remove('drag-over');
     }
     
     function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
-        const fileInput = document.getElementById('files');
         
-        if (fileInput) {
+        if (files.length > 0) {
             fileInput.files = files;
-            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            // Trigger change event
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
         }
     }
 }
 
-// Initialize drag and drop when DOM is ready
-document.addEventListener('DOMContentLoaded', initializeDragAndDrop);
-
 /**
- * Search functionality for files
+ * Load more content (pagination helper)
  */
-function initializeSearch() {
-    const searchInput = document.getElementById('searchFiles');
-    if (!searchInput) return;
+function loadMoreContent(url, containerId, buttonId) {
+    const container = document.getElementById(containerId);
+    const button = document.getElementById(buttonId);
     
-    searchInput.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const fileRows = document.querySelectorAll('tbody tr');
-        
-        fileRows.forEach(row => {
-            const fileName = row.querySelector('td:first-child').textContent.toLowerCase();
-            const isVisible = fileName.includes(searchTerm);
-            row.style.display = isVisible ? '' : 'none';
+    if (!container || !button) return;
+    
+    button.classList.add('loading');
+    button.disabled = true;
+    
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            container.insertAdjacentHTML('beforeend', html);
+            button.classList.remove('loading');
+            button.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+            showAlert('Failed to load more content', 'error');
+            button.classList.remove('loading');
+            button.disabled = false;
         });
-    });
 }
 
-// Additional utility functions
-window.downloadFile = function(filename) {
-    window.location.href = `/download/${encodeURIComponent(filename)}`;
-};
-
-// Error handling for images
-document.addEventListener('error', function(e) {
-    if (e.target.tagName === 'IMG') {
-        e.target.style.display = 'none';
-    }
-}, true);
-
-// Handle offline/online status
+/**
+ * Handle offline/online status
+ */
 window.addEventListener('online', function() {
     showAlert('Connection restored!', 'success');
 });
@@ -366,3 +302,55 @@ window.addEventListener('online', function() {
 window.addEventListener('offline', function() {
     showAlert('You are currently offline. Some features may not work.', 'warning');
 });
+
+/**
+ * Handle page visibility changes
+ */
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Page is hidden
+        console.log('Page hidden');
+    } else {
+        // Page is visible
+        console.log('Page visible');
+    }
+});
+
+/**
+ * Error handling for images
+ */
+document.addEventListener('error', function(e) {
+    if (e.target.tagName === 'IMG') {
+        e.target.style.display = 'none';
+        console.log('Image failed to load:', e.target.src);
+    }
+}, true);
+
+/**
+ * Print functionality
+ */
+function printPage() {
+    window.print();
+}
+
+/**
+ * Export table data to CSV
+ */
+function exportTableToCSV(tableId, filename = 'data.csv') {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    const rows = Array.from(table.querySelectorAll('tr'));
+    const csv = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('th, td'));
+        return cells.map(cell => `"${cell.textContent.trim()}"`).join(',');
+    }).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
