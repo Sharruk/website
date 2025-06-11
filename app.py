@@ -4,41 +4,14 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-
-# Database configuration
-database_url = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Initialize db with or without database
-if database_url:
-    try:
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_recycle": 300,
-            "pool_pre_ping": True,
-        }
-        db.init_app(app)
-        database_available = True
-    except Exception as e:
-        app.logger.warning(f"Database connection failed: {e}")
-        database_available = False
-else:
-    database_available = False
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -55,43 +28,6 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Define models here after db is initialized
-class UploadedFile(db.Model):
-    __tablename__ = 'uploaded_files'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    original_filename = db.Column(db.String(255), nullable=False)
-    file_size = db.Column(db.Integer, nullable=False)
-    file_extension = db.Column(db.String(10), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)
-    
-
-    
-    def __repr__(self):
-        return f'<UploadedFile {self.filename}>'
-    
-    def get_file_size_formatted(self):
-        """Get human readable file size"""
-        size = self.file_size
-        for unit in ['B', 'KB', 'MB', 'GB']:
-            if size < 1024.0:
-                return f"{size:.1f} {unit}"
-            size /= 1024.0
-        return f"{size:.1f} TB"
-
-# Create database tables only if database is available
-if database_available and database_url:
-    try:
-        with app.app_context():
-            db.create_all()
-            app.logger.info("Database tables created successfully")
-    except Exception as e:
-        app.logger.error(f"Failed to create database tables: {e}")
-        database_available = False
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -130,36 +66,20 @@ def get_file_category(filename):
 def index():
     """Homepage showing all uploaded files"""
     try:
-        if database_url:
-            # Get files from database
-            uploaded_files = db.session.execute(
-                db.select(UploadedFile).order_by(UploadedFile.upload_date.desc())
-            ).scalars().all()
-            files = []
-            for db_file in uploaded_files:
-                files.append({
-                    'name': db_file.filename,
-                    'size': db_file.get_file_size_formatted(),
-                    'category': db_file.category,
-                    'upload_date': db_file.upload_date.strftime('%Y-%m-%d %H:%M'),
-                    'extension': db_file.file_extension
-                })
-        else:
-            # Fallback to file system
-            files = []
-            if os.path.exists(UPLOAD_FOLDER):
-                for filename in os.listdir(UPLOAD_FOLDER):
-                    if filename != '.gitkeep':
-                        filepath = os.path.join(UPLOAD_FOLDER, filename)
-                        if os.path.isfile(filepath):
-                            file_stat = os.stat(filepath)
-                            files.append({
-                                'name': filename,
-                                'size': get_file_size(filepath),
-                                'category': get_file_category(filename),
-                                'upload_date': datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
-                                'extension': filename.rsplit('.', 1)[1].lower() if '.' in filename else 'none'
-                            })
+        files = []
+        if os.path.exists(UPLOAD_FOLDER):
+            for filename in os.listdir(UPLOAD_FOLDER):
+                if filename != '.gitkeep':
+                    filepath = os.path.join(UPLOAD_FOLDER, filename)
+                    if os.path.isfile(filepath):
+                        file_stat = os.stat(filepath)
+                        files.append({
+                            'name': filename,
+                            'size': get_file_size(filepath),
+                            'category': get_file_category(filename),
+                            'upload_date': datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
+                            'extension': filename.rsplit('.', 1)[1].lower() if '.' in filename else 'none'
+                        })
         
         # Group files by category
         categories = {}
@@ -207,20 +127,6 @@ def upload():
                         
                         # Save the file
                         file.save(filepath)
-                        
-                        # Save file metadata to database if available
-                        if database_available and database_url:
-                            new_file = UploadedFile(
-                                filename=filename,
-                                original_filename=file.filename,
-                                file_size=file.content_length or os.path.getsize(filepath),
-                                file_extension=filename.rsplit('.', 1)[1].lower() if '.' in filename else '',
-                                category=get_file_category(filename),
-                                file_path=filepath
-                            )
-                            db.session.add(new_file)
-                            db.session.commit()
-                        
                         uploaded_count += 1
                         app.logger.info(f"File uploaded: {filename}")
                     
@@ -265,15 +171,6 @@ def delete(filename):
         # Secure the filename
         filename = secure_filename(filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
-        # Delete from database if available
-        if database_available and database_url:
-            db_file = db.session.execute(
-                db.select(UploadedFile).where(UploadedFile.filename == filename)
-            ).scalar_one_or_none()
-            if db_file:
-                db.session.delete(db_file)
-                db.session.commit()
         
         # Delete physical file
         if os.path.exists(filepath) and os.path.isfile(filepath):
