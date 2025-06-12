@@ -1,89 +1,323 @@
 {
-  "departments": {
-    "computer_science": {
-      "name": "Computer Science",
-      "semesters": {
-        "1": {
-          "name": "Semester 1"
+  "course_types": {
+    "ug": {
+      "name": "Under Graduate (UG)",
+      "departments": {
+        "cse": {
+          "name": "Computer Science & Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "2": {
-          "name": "Semester 2"
+        "mech": {
+          "name": "Mechanical Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "3": {
-          "name": "Semester 3"
+        "eee": {
+          "name": "Electrical & Electronics Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "4": {
-          "name": "Semester 4"
+        "ece": {
+          "name": "Electronics & Communication Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "5": {
-          "name": "Semester 5"
+        "it": {
+          "name": "Information Technology",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "6": {
-          "name": "Semester 6"
+        "chem": {
+          "name": "Chemical Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         },
-        "7": {
-          "name": "Semester 7"
-        },
-        "8": {
-          "name": "Semester 8"
+        "civil": {
+          "name": "Civil Engineering",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            }
+          }
         }
       }
     },
-    "mechanical": {
-      "name": "Mechanical Engineering",
-      "semesters": {
-        "1": {
-          "name": "Semester 1"
+    "pg": {
+      "name": "Post Graduate (PG)",
+      "departments": {
+        "mtech_cse": {
+          "name": "M.Tech CSE (5-Year)",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            },
+            "5": {
+              "name": "Semester 5"
+            },
+            "6": {
+              "name": "Semester 6"
+            },
+            "7": {
+              "name": "Semester 7"
+            },
+            "8": {
+              "name": "Semester 8"
+            },
+            "9": {
+              "name": "Semester 9"
+            },
+            "10": {
+              "name": "Semester 10"
+            }
+          }
         },
-        "2": {
-          "name": "Semester 2"
+        "me_applied_electronics": {
+          "name": "M.E Applied Electronics",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            }
+          }
         },
-        "3": {
-          "name": "Semester 3"
+        "me_structural": {
+          "name": "M.E Structural",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            }
+          }
         },
-        "4": {
-          "name": "Semester 4"
-        },
-        "5": {
-          "name": "Semester 5"
-        },
-        "6": {
-          "name": "Semester 6"
-        },
-        "7": {
-          "name": "Semester 7"
-        },
-        "8": {
-          "name": "Semester 8"
+        "me_ped": {
+          "name": "M.E PED",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            }
+          }
         }
       }
     },
-    "electrical": {
-      "name": "Electrical Engineering",
-      "semesters": {
-        "1": {
-          "name": "Semester 1"
-        },
-        "2": {
-          "name": "Semester 2"
-        },
-        "3": {
-          "name": "Semester 3"
-        },
-        "4": {
-          "name": "Semester 4"
-        },
-        "5": {
-          "name": "Semester 5"
-        },
-        "6": {
-          "name": "Semester 6"
-        },
-        "7": {
-          "name": "Semester 7"
-        },
-        "8": {
-          "name": "Semester 8"
+    "mba": {
+      "name": "Master of Business Administration (MBA)",
+      "departments": {
+        "general_mba": {
+          "name": "General MBA",
+          "semesters": {
+            "1": {
+              "name": "Semester 1"
+            },
+            "2": {
+              "name": "Semester 2"
+            },
+            "3": {
+              "name": "Semester 3"
+            },
+            "4": {
+              "name": "Semester 4"
+            }
+          }
         }
       }
     }

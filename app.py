@@ -111,7 +111,7 @@ def load_data():
             return data
     except Exception as e:
         app.logger.error(f"Error loading data: {e}")
-        return {"departments": {}, "files": []}
+        return {"course_types": {}, "files": []}
 
 def save_data(data):
     """Save data to JSON file"""
