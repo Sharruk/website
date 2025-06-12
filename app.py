@@ -372,6 +372,312 @@ def delete_file(file_id):
         flash('Error deleting file', 'error')
         return redirect(url_for('index'))
 
+# Syllabus Routes
+@app.route('/syllabus')
+def syllabus_home():
+    """Syllabus homepage showing course types"""
+    course_types = {
+        'ug': {
+            'name': 'Under Graduate (UG)',
+            'icon': 'fas fa-user-graduate',
+            'color': 'primary'
+        },
+        'pg': {
+            'name': 'Post Graduate (PG)', 
+            'icon': 'fas fa-graduation-cap',
+            'color': 'success'
+        },
+        'mba': {
+            'name': 'Master of Business Administration (MBA)',
+            'icon': 'fas fa-briefcase',
+            'color': 'warning'
+        }
+    }
+    return render_template('syllabus/home.html', course_types=course_types)
+
+@app.route('/syllabus/<course_type>')
+def syllabus_course_type(course_type):
+    """Syllabus course type page showing departments"""
+    departments = {
+        'ug': {
+            'name': 'Under Graduate (UG)',
+            'departments': {
+                'cse': 'Computer Science & Engineering',
+                'mech': 'Mechanical Engineering',
+                'eee': 'Electrical & Electronics Engineering',
+                'ece': 'Electronics & Communication Engineering',
+                'it': 'Information Technology',
+                'chem': 'Chemical Engineering',
+                'civil': 'Civil Engineering'
+            }
+        },
+        'pg': {
+            'name': 'Post Graduate (PG)',
+            'departments': {
+                'mtech_cse_5yr': 'M.Tech CSE (5-Year)',
+                'me_applied_electronics': 'M.E Applied Electronics',
+                'me_structural': 'M.E Structural',
+                'me_ped': 'M.E PED'
+            }
+        },
+        'mba': {
+            'name': 'Master of Business Administration (MBA)',
+            'departments': {
+                'general_mba': 'General MBA'
+            }
+        }
+    }
+    
+    if course_type not in departments:
+        flash('Course type not found', 'error')
+        return redirect(url_for('syllabus_home'))
+    
+    course_data = departments[course_type]
+    return render_template('syllabus/course_type.html', 
+                         course_type=course_data,
+                         course_type_id=course_type)
+
+@app.route('/syllabus/<course_type>/<dept_id>')
+def syllabus_department(course_type, dept_id):
+    """Syllabus department page showing regulations"""
+    regulations = ['2017', '2023', '2025']
+    
+    departments = {
+        'ug': {
+            'name': 'Under Graduate (UG)',
+            'departments': {
+                'cse': 'Computer Science & Engineering',
+                'mech': 'Mechanical Engineering',
+                'eee': 'Electrical & Electronics Engineering',
+                'ece': 'Electronics & Communication Engineering',
+                'it': 'Information Technology',
+                'chem': 'Chemical Engineering',
+                'civil': 'Civil Engineering'
+            }
+        },
+        'pg': {
+            'name': 'Post Graduate (PG)',
+            'departments': {
+                'mtech_cse_5yr': 'M.Tech CSE (5-Year)',
+                'me_applied_electronics': 'M.E Applied Electronics',
+                'me_structural': 'M.E Structural',
+                'me_ped': 'M.E PED'
+            }
+        },
+        'mba': {
+            'name': 'Master of Business Administration (MBA)',
+            'departments': {
+                'general_mba': 'General MBA'
+            }
+        }
+    }
+    
+    if course_type not in departments or dept_id not in departments[course_type]['departments']:
+        flash('Department not found', 'error')
+        return redirect(url_for('syllabus_home'))
+    
+    course_data = departments[course_type]
+    dept_name = departments[course_type]['departments'][dept_id]
+    
+    return render_template('syllabus/department.html',
+                         course_type=course_data,
+                         course_type_id=course_type,
+                         dept_name=dept_name,
+                         dept_id=dept_id,
+                         regulations=regulations)
+
+@app.route('/syllabus/<course_type>/<dept_id>/<regulation>')
+def syllabus_regulation(course_type, dept_id, regulation):
+    """Syllabus regulation page showing files and upload"""
+    data = load_data()
+    
+    # Filter syllabus files for this specific regulation
+    syllabus_files = []
+    for file_data in data.get('syllabus_files', []):
+        if (file_data['course_type'] == course_type and 
+            file_data['department'] == dept_id and 
+            file_data['regulation'] == regulation):
+            syllabus_files.append(file_data)
+    
+    departments = {
+        'ug': {
+            'name': 'Under Graduate (UG)',
+            'departments': {
+                'cse': 'Computer Science & Engineering',
+                'mech': 'Mechanical Engineering',
+                'eee': 'Electrical & Electronics Engineering',
+                'ece': 'Electronics & Communication Engineering',
+                'it': 'Information Technology',
+                'chem': 'Chemical Engineering',
+                'civil': 'Civil Engineering'
+            }
+        },
+        'pg': {
+            'name': 'Post Graduate (PG)',
+            'departments': {
+                'mtech_cse_5yr': 'M.Tech CSE (5-Year)',
+                'me_applied_electronics': 'M.E Applied Electronics',
+                'me_structural': 'M.E Structural',
+                'me_ped': 'M.E PED'
+            }
+        },
+        'mba': {
+            'name': 'Master of Business Administration (MBA)',
+            'departments': {
+                'general_mba': 'General MBA'
+            }
+        }
+    }
+    
+    if course_type not in departments or dept_id not in departments[course_type]['departments']:
+        flash('Department not found', 'error')
+        return redirect(url_for('syllabus_home'))
+    
+    course_data = departments[course_type]
+    dept_name = departments[course_type]['departments'][dept_id]
+    
+    return render_template('syllabus/regulation.html',
+                         course_type=course_data,
+                         course_type_id=course_type,
+                         dept_name=dept_name,
+                         dept_id=dept_id,
+                         regulation=regulation,
+                         syllabus_files=syllabus_files)
+
+@app.route('/syllabus/upload/<course_type>/<dept_id>/<regulation>', methods=['POST'])
+def upload_syllabus(course_type, dept_id, regulation):
+    """Upload syllabus file"""
+    try:
+        if 'file' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
+        
+        if file and allowed_file(file.filename):
+            # Load existing data
+            data = load_data()
+            if 'syllabus_files' not in data:
+                data['syllabus_files'] = []
+            
+            # Generate unique filename
+            filename = secure_filename(file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            unique_filename = f"syllabus_{timestamp}_{filename}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            # Save file
+            file.save(filepath)
+            
+            # Get file info
+            file_size = os.path.getsize(filepath)
+            file_extension = filename.rsplit('.', 1)[1].lower()
+            
+            # Generate unique ID
+            max_id = 0
+            for existing_file in data['syllabus_files']:
+                if existing_file['id'] > max_id:
+                    max_id = existing_file['id']
+            new_id = max_id + 1
+            
+            # Add to data
+            file_info = {
+                'id': new_id,
+                'filename': unique_filename,
+                'original_filename': filename,
+                'file_size': file_size,
+                'file_extension': file_extension,
+                'course_type': course_type,
+                'department': dept_id,
+                'regulation': regulation,
+                'upload_date': datetime.now().isoformat(),
+                'file_path': filepath
+            }
+            
+            data['syllabus_files'].append(file_info)
+            save_data(data)
+            
+            flash('Syllabus uploaded successfully!', 'success')
+        else:
+            flash('File type not allowed. Please upload PDF or DOCX files only.', 'error')
+    
+    except Exception as e:
+        app.logger.error(f"Syllabus upload error: {str(e)}")
+        flash('An error occurred during upload. Please try again.', 'error')
+    
+    return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
+
+@app.route('/syllabus/download/<int:file_id>')
+def download_syllabus(file_id):
+    """Download syllabus file"""
+    try:
+        data = load_data()
+        file_data = None
+        
+        for f in data.get('syllabus_files', []):
+            if f['id'] == file_id:
+                file_data = f
+                break
+        
+        if not file_data:
+            flash('File not found', 'error')
+            return redirect(url_for('syllabus_home'))
+        
+        filepath = file_data['file_path']
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            return send_file(filepath, as_attachment=True, download_name=file_data['original_filename'])
+        else:
+            flash('File not found on disk', 'error')
+            return redirect(url_for('syllabus_home'))
+    
+    except Exception as e:
+        app.logger.error(f"Syllabus download error: {str(e)}")
+        flash('Error downloading file', 'error')
+        return redirect(url_for('syllabus_home'))
+
+@app.route('/syllabus/delete/<int:file_id>')
+def delete_syllabus(file_id):
+    """Delete syllabus file"""
+    try:
+        data = load_data()
+        file_data = None
+        file_index = -1
+        
+        for i, f in enumerate(data.get('syllabus_files', [])):
+            if f['id'] == file_id:
+                file_data = f
+                file_index = i
+                break
+        
+        if not file_data:
+            flash('File not found', 'error')
+            return redirect(url_for('syllabus_home'))
+        
+        # Delete physical file
+        filepath = file_data['file_path']
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            os.remove(filepath)
+        
+        # Remove from JSON data
+        if 'syllabus_files' not in data:
+            data['syllabus_files'] = []
+        data['syllabus_files'].pop(file_index)
+        save_data(data)
+        
+        flash('Syllabus deleted successfully', 'success')
+        return redirect(url_for('syllabus_regulation',
+                      course_type=file_data['course_type'],
+                      dept_id=file_data['department'],
+                      regulation=file_data['regulation']))
+    
+    except Exception as e:
+        app.logger.error(f"Syllabus delete error: {str(e)}")
+        flash('Error deleting file', 'error')
+        return redirect(url_for('syllabus_home'))
+
 @app.errorhandler(413)
 def file_too_large(error):
     """Handle file too large error"""
