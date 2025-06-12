@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Course Types - College Materials & PYQs Portal{% endblock %}
+{% block title %}College Materials & PYQs Portal{% endblock %}
 
 {% block breadcrumb %}
 <nav aria-label="breadcrumb" class="bg-light py-2">
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item active">
-                <i class="fas fa-home me-1"></i>Course Types
+                <i class="fas fa-home me-1"></i>Home
             </li>
         </ol>
     </div>
@@ -17,52 +17,69 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="display-6">
-                <i class="fas fa-university text-primary me-3"></i>
-                Select Course Type
-            </h1>
-            <a href="{{ url_for('upload') }}" class="btn btn-primary">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="display-5 mb-2">
+                    <i class="fas fa-graduation-cap text-primary me-3"></i>
+                    College Materials & PYQs Portal
+                </h1>
+                <p class="text-muted lead">Your academic resource hub for study materials and previous year question papers</p>
+            </div>
+            <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg">
                 <i class="fas fa-plus me-2"></i>Upload Files
             </a>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    {% for course_type_id, course_type in course_types.items() %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100 department-card">
-            <div class="card-body text-center">
-                <div class="department-icon mb-3">
-                    {% if course_type_id == 'ug' %}
-                        <i class="fas fa-graduation-cap fa-3x text-primary"></i>
-                    {% elif course_type_id == 'pg' %}
-                        <i class="fas fa-user-graduate fa-3x text-success"></i>
-                    {% elif course_type_id == 'mba' %}
-                        <i class="fas fa-briefcase fa-3x text-warning"></i>
-                    {% else %}
-                        <i class="fas fa-school fa-3x text-info"></i>
-                    {% endif %}
+<div class="row g-4 justify-content-center">
+    <!-- Question Papers Section -->
+    <div class="col-lg-5 col-md-6">
+        <div class="card h-100 shadow-lg hover-card border-0">
+            <div class="card-body text-center p-5">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
+                    <i class="fas fa-file-alt fa-3x text-primary"></i>
                 </div>
-                <h5 class="card-title">{{ course_type.name }}</h5>
-                <p class="card-text text-muted">
-                    {{ course_type.departments|length }} Departments Available
+                <h3 class="card-title mb-3 text-primary">Question Papers</h3>
+                <p class="card-text text-muted mb-4">
+                    Access previous year question papers, CAT, ESE, and practical materials organized by department and semester.
                 </p>
-                <a href="{{ url_for('course_type', course_type_id=course_type_id) }}" class="btn btn-outline-primary">
-                    View Departments <i class="fas fa-arrow-right ms-1"></i>
+                <a href="{{ url_for('materials_home') }}" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    Browse Question Papers
                 </a>
             </div>
         </div>
     </div>
-    {% endfor %}
+
+    <!-- Syllabus Section -->
+    <div class="col-lg-5 col-md-6">
+        <div class="card h-100 shadow-lg hover-card border-0">
+            <div class="card-body text-center p-5">
+                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
+                    <i class="fas fa-book fa-3x text-success"></i>
+                </div>
+                <h3 class="card-title mb-3 text-success">Syllabus</h3>
+                <p class="card-text text-muted mb-4">
+                    Download complete syllabus documents for all regulations and departments across different course types.
+                </p>
+                <a href="{{ url_for('syllabus_home') }}" class="btn btn-success btn-lg w-100">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    Browse Syllabus
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% if not course_types %}
-<div class="text-center py-5">
-    <i class="fas fa-university fa-5x text-muted mb-3"></i>
-    <h3 class="text-muted">No Course Types Available</h3>
-    <p class="text-muted">Contact administrator to add course types.</p>
-</div>
-{% endif %}
+<style>
+.hover-card {
+    transition: all 0.3s ease-in-out;
+}
+
+.hover-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+}
+</style>
 {% endblock %}

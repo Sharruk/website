@@ -137,9 +137,14 @@ def get_file_size(filepath):
 
 @app.route('/')
 def index():
-    """Homepage showing list of course types"""
+    """Homepage showing main sections: Question Papers and Syllabus"""
+    return render_template('index.html')
+
+@app.route('/materials')
+def materials_home():
+    """Materials homepage showing course types for question papers"""
     data = load_data()
-    return render_template('index.html', course_types=data['course_types'])
+    return render_template('materials/home.html', course_types=data['course_types'])
 
 @app.route('/course/<course_type_id>')
 def course_type(course_type_id):
