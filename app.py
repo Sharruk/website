@@ -557,14 +557,15 @@ def upload_syllabus(course_type, dept_id, regulation):
             flash('No file selected', 'error')
             return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
         
-        if file and allowed_file(file.filename):
+        if file and file.filename and allowed_file(file.filename):
             # Load existing data
             data = load_data()
             if 'syllabus_files' not in data:
                 data['syllabus_files'] = []
             
             # Generate unique filename
-            filename = secure_filename(file.filename)
+            original_filename = file.filename
+            filename = secure_filename(original_filename)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             unique_filename = f"syllabus_{timestamp}_{filename}"
             filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
