@@ -7,13 +7,16 @@
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Departments</a>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Course Types</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ url_for('department', dept_id=dept_id) }}">{{ department.name }}</a>
+                <a href="{{ url_for('course_type', course_type_id=course_type_id) }}">{{ course_type.name }}</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ url_for('semester', dept_id=dept_id, semester_id=semester_id) }}">Semester {{ semester_id }}</a>
+                <a href="{{ url_for('department', course_type_id=course_type_id, dept_id=dept_id) }}">{{ department.name }}</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('semester', course_type_id=course_type_id, dept_id=dept_id, semester_id=semester_id) }}">Semester {{ semester_id }}</a>
             </li>
             <li class="breadcrumb-item active">{{ category }}</li>
         </ol>

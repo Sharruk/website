@@ -7,7 +7,10 @@
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Departments</a>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Course Types</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('course_type', course_type_id=course_type_id) }}">{{ course_type.name }}</a>
             </li>
             <li class="breadcrumb-item active">{{ department.name }}</li>
         </ol>
@@ -39,7 +42,7 @@
                     <span class="badge bg-primary fs-4 px-3 py-2">{{ semester_id }}</span>
                 </div>
                 <h6 class="card-title">{{ semester.name }}</h6>
-                <a href="{{ url_for('semester', dept_id=dept_id, semester_id=semester_id) }}" 
+                <a href="{{ url_for('semester', course_type_id=course_type_id, dept_id=dept_id, semester_id=semester_id) }}" 
                    class="btn btn-outline-primary btn-sm">
                     View Categories <i class="fas fa-arrow-right ms-1"></i>
                 </a>

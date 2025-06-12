@@ -7,10 +7,13 @@
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Departments</a>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Course Types</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ url_for('department', dept_id=dept_id) }}">{{ department.name }}</a>
+                <a href="{{ url_for('course_type', course_type_id=course_type_id) }}">{{ course_type.name }}</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('department', course_type_id=course_type_id, dept_id=dept_id) }}">{{ department.name }}</a>
             </li>
             <li class="breadcrumb-item active">Semester {{ semester_id }}</li>
         </ol>
@@ -63,7 +66,7 @@
                         Practical Examinations
                     {% endif %}
                 </p>
-                <a href="{{ url_for('category_view', dept_id=dept_id, semester_id=semester_id, category=category) }}" 
+                <a href="{{ url_for('category_view', course_type_id=course_type_id, dept_id=dept_id, semester_id=semester_id, category=category) }}" 
                    class="btn btn-outline-primary">
                     View Files <i class="fas fa-arrow-right ms-1"></i>
                 </a>

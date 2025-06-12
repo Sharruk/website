@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Departments - College Materials & PYQs Portal{% endblock %}
+{% block title %}Course Types - College Materials & PYQs Portal{% endblock %}
 
 {% block breadcrumb %}
 <nav aria-label="breadcrumb" class="bg-light py-2">
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item active">
-                <i class="fas fa-home me-1"></i>Departments
+                <i class="fas fa-home me-1"></i>Course Types
             </li>
         </ol>
     </div>
@@ -20,7 +20,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="display-6">
                 <i class="fas fa-university text-primary me-3"></i>
-                Select Department
+                Select Course Type
             </h1>
             <a href="{{ url_for('upload') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Upload Files
@@ -30,27 +30,27 @@
 </div>
 
 <div class="row g-4">
-    {% for dept_id, department in departments.items() %}
+    {% for course_type_id, course_type in course_types.items() %}
     <div class="col-md-6 col-lg-4">
         <div class="card h-100 department-card">
             <div class="card-body text-center">
                 <div class="department-icon mb-3">
-                    {% if dept_id == 'computer_science' %}
-                        <i class="fas fa-laptop-code fa-3x text-primary"></i>
-                    {% elif dept_id == 'mechanical' %}
-                        <i class="fas fa-cogs fa-3x text-success"></i>
-                    {% elif dept_id == 'electrical' %}
-                        <i class="fas fa-bolt fa-3x text-warning"></i>
+                    {% if course_type_id == 'ug' %}
+                        <i class="fas fa-graduation-cap fa-3x text-primary"></i>
+                    {% elif course_type_id == 'pg' %}
+                        <i class="fas fa-user-graduate fa-3x text-success"></i>
+                    {% elif course_type_id == 'mba' %}
+                        <i class="fas fa-briefcase fa-3x text-warning"></i>
                     {% else %}
-                        <i class="fas fa-graduation-cap fa-3x text-info"></i>
+                        <i class="fas fa-school fa-3x text-info"></i>
                     {% endif %}
                 </div>
-                <h5 class="card-title">{{ department.name }}</h5>
+                <h5 class="card-title">{{ course_type.name }}</h5>
                 <p class="card-text text-muted">
-                    {{ department.semesters|length }} Semesters Available
+                    {{ course_type.departments|length }} Departments Available
                 </p>
-                <a href="{{ url_for('department', dept_id=dept_id) }}" class="btn btn-outline-primary">
-                    View Semesters <i class="fas fa-arrow-right ms-1"></i>
+                <a href="{{ url_for('course_type', course_type_id=course_type_id) }}" class="btn btn-outline-primary">
+                    View Departments <i class="fas fa-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
@@ -58,11 +58,11 @@
     {% endfor %}
 </div>
 
-{% if not departments %}
+{% if not course_types %}
 <div class="text-center py-5">
     <i class="fas fa-university fa-5x text-muted mb-3"></i>
-    <h3 class="text-muted">No Departments Available</h3>
-    <p class="text-muted">Contact administrator to add departments.</p>
+    <h3 class="text-muted">No Course Types Available</h3>
+    <p class="text-muted">Contact administrator to add course types.</p>
 </div>
 {% endif %}
 {% endblock %}

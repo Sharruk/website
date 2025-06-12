@@ -7,7 +7,7 @@
     <div class="container">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Departments</a>
+                <a href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Course Types</a>
             </li>
             <li class="breadcrumb-item active">Upload Files</li>
         </ol>
@@ -27,6 +27,19 @@
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <!-- Course Type Selection -->
+                    <div class="mb-3">
+                        <label for="course_type" class="form-label">
+                            <i class="fas fa-graduation-cap me-1"></i>Course Type
+                        </label>
+                        <select class="form-select" id="course_type" name="course_type" required>
+                            <option value="">Select Course Type</option>
+                            {% for course_type_id, course_type in course_types.items() %}
+                            <option value="{{ course_type_id }}">{{ course_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- Department Selection -->
                     <div class="mb-3">
                         <label for="department" class="form-label">
@@ -34,9 +47,6 @@
                         </label>
                         <select class="form-select" id="department" name="department" required>
                             <option value="">Select Department</option>
-                            {% for dept_id, department in departments.items() %}
-                            <option value="{{ dept_id }}">{{ department.name }}</option>
-                            {% endfor %}
                         </select>
                     </div>
 
@@ -111,19 +121,44 @@
 
 {% block scripts %}
 <script>
-// Department and semester data
-const departmentData = {{ departments|tojson }};
+// Course types and department data
+const courseTypesData = {{ course_types|tojson }};
+
+// Handle course type selection
+document.getElementById('course_type').addEventListener('change', function() {
+    const courseTypeId = this.value;
+    const departmentSelect = document.getElementById('department');
+    const semesterSelect = document.getElementById('semester');
+    
+    // Clear existing options
+    departmentSelect.innerHTML = '<option value="">Select Department</option>';
+    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+    
+    if (courseTypeId && courseTypesData[courseTypeId] && courseTypesData[courseTypeId].departments) {
+        const departments = courseTypesData[courseTypeId].departments;
+        
+        for (const [deptId, deptData] of Object.entries(departments)) {
+            const option = document.createElement('option');
+            option.value = deptId;
+            option.textContent = deptData.name;
+            departmentSelect.appendChild(option);
+        }
+    }
+});
 
 // Handle department selection
 document.getElementById('department').addEventListener('change', function() {
+    const courseTypeId = document.getElementById('course_type').value;
     const deptId = this.value;
     const semesterSelect = document.getElementById('semester');
     
     // Clear existing options
     semesterSelect.innerHTML = '<option value="">Select Semester</option>';
     
-    if (deptId && departmentData[deptId] && departmentData[deptId].semesters) {
-        const semesters = departmentData[deptId].semesters;
+    if (courseTypeId && deptId && courseTypesData[courseTypeId] && 
+        courseTypesData[courseTypeId].departments[deptId] && 
+        courseTypesData[courseTypeId].departments[deptId].semesters) {
+        const semesters = courseTypesData[courseTypeId].departments[deptId].semesters;
         
         for (const [semId, semData] of Object.entries(semesters)) {
             const option = document.createElement('option');
@@ -136,13 +171,14 @@ document.getElementById('department').addEventListener('change', function() {
 
 // Form validation
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const courseType = document.getElementById('course_type').value;
     const department = document.getElementById('department').value;
     const semester = document.getElementById('semester').value;
     const category = document.getElementById('category').value;
     const subject = document.getElementById('subject').value.trim();
     const file = document.getElementById('file').files[0];
     
-    if (!department || !semester || !category || !subject || !file) {
+    if (!courseType || !department || !semester || !category || !subject || !file) {
         e.preventDefault();
         alert('Please fill in all required fields.');
         return false;

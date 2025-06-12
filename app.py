@@ -40,44 +40,68 @@ def load_data():
         else:
             # Initialize with sample data
             data = {
-                "departments": {
-                    "computer_science": {
-                        "name": "Computer Science",
-                        "semesters": {
-                            "1": {"name": "Semester 1"},
-                            "2": {"name": "Semester 2"},
-                            "3": {"name": "Semester 3"},
-                            "4": {"name": "Semester 4"},
-                            "5": {"name": "Semester 5"},
-                            "6": {"name": "Semester 6"},
-                            "7": {"name": "Semester 7"},
-                            "8": {"name": "Semester 8"}
+                "course_types": {
+                    "ug": {
+                        "name": "Under Graduate (UG)",
+                        "departments": {
+                            "cse": {
+                                "name": "Computer Science & Engineering",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "mech": {
+                                "name": "Mechanical Engineering", 
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "eee": {
+                                "name": "Electrical & Electronics Engineering",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "ece": {
+                                "name": "Electronics & Communication Engineering",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "it": {
+                                "name": "Information Technology",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "chem": {
+                                "name": "Chemical Engineering",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            },
+                            "civil": {
+                                "name": "Civil Engineering",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 9)}
+                            }
                         }
                     },
-                    "mechanical": {
-                        "name": "Mechanical Engineering",
-                        "semesters": {
-                            "1": {"name": "Semester 1"},
-                            "2": {"name": "Semester 2"},
-                            "3": {"name": "Semester 3"},
-                            "4": {"name": "Semester 4"},
-                            "5": {"name": "Semester 5"},
-                            "6": {"name": "Semester 6"},
-                            "7": {"name": "Semester 7"},
-                            "8": {"name": "Semester 8"}
+                    "pg": {
+                        "name": "Post Graduate (PG)",
+                        "departments": {
+                            "mtech_cse": {
+                                "name": "M.Tech CSE (5-Year)",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 11)}
+                            },
+                            "me_applied_electronics": {
+                                "name": "M.E Applied Electronics",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 5)}
+                            },
+                            "me_structural": {
+                                "name": "M.E Structural",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 5)}
+                            },
+                            "me_ped": {
+                                "name": "M.E PED",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 5)}
+                            }
                         }
                     },
-                    "electrical": {
-                        "name": "Electrical Engineering",
-                        "semesters": {
-                            "1": {"name": "Semester 1"},
-                            "2": {"name": "Semester 2"},
-                            "3": {"name": "Semester 3"},
-                            "4": {"name": "Semester 4"},
-                            "5": {"name": "Semester 5"},
-                            "6": {"name": "Semester 6"},
-                            "7": {"name": "Semester 7"},
-                            "8": {"name": "Semester 8"}
+                    "mba": {
+                        "name": "Master of Business Administration (MBA)",
+                        "departments": {
+                            "general_mba": {
+                                "name": "General MBA",
+                                "semesters": {str(i): {"name": f"Semester {i}"} for i in range(1, 5)}
+                            }
                         }
                     }
                 },
@@ -113,59 +137,84 @@ def get_file_size(filepath):
 
 @app.route('/')
 def index():
-    """Homepage showing list of departments"""
+    """Homepage showing list of course types"""
     data = load_data()
-    return render_template('index.html', departments=data['departments'])
+    return render_template('index.html', course_types=data['course_types'])
 
-@app.route('/department/<dept_id>')
-def department(dept_id):
+@app.route('/course/<course_type_id>')
+def course_type(course_type_id):
+    """Course type page showing list of departments"""
+    data = load_data()
+    if course_type_id not in data['course_types']:
+        flash('Course type not found', 'error')
+        return redirect(url_for('index'))
+    
+    course_data = data['course_types'][course_type_id]
+    return render_template('course_type.html', 
+                         course_type=course_data,
+                         course_type_id=course_type_id)
+
+@app.route('/department/<course_type_id>/<dept_id>')
+def department(course_type_id, dept_id):
     """Department page showing list of semesters"""
     data = load_data()
-    if dept_id not in data['departments']:
+    if course_type_id not in data['course_types'] or dept_id not in data['course_types'][course_type_id]['departments']:
         flash('Department not found', 'error')
         return redirect(url_for('index'))
     
-    department_data = data['departments'][dept_id]
+    course_data = data['course_types'][course_type_id]
+    department_data = course_data['departments'][dept_id]
     return render_template('department.html', 
+                         course_type=course_data,
+                         course_type_id=course_type_id,
                          department=department_data, 
                          dept_id=dept_id)
 
-@app.route('/semester/<dept_id>/<semester_id>')
-def semester(dept_id, semester_id):
+@app.route('/semester/<course_type_id>/<dept_id>/<semester_id>')
+def semester(course_type_id, dept_id, semester_id):
     """Semester page showing list of categories"""
     data = load_data()
-    if dept_id not in data['departments']:
+    if (course_type_id not in data['course_types'] or 
+        dept_id not in data['course_types'][course_type_id]['departments']):
         flash('Department not found', 'error')
         return redirect(url_for('index'))
     
-    department_data = data['departments'][dept_id]
+    course_data = data['course_types'][course_type_id]
+    department_data = course_data['departments'][dept_id]
     categories = ['CAT', 'ESE', 'SAT', 'Practical']
     
     return render_template('semester.html', 
+                         course_type=course_data,
+                         course_type_id=course_type_id,
                          department=department_data,
                          dept_id=dept_id,
                          semester_id=semester_id,
                          categories=categories)
 
-@app.route('/category/<dept_id>/<semester_id>/<category>')
-def category_view(dept_id, semester_id, category):
+@app.route('/category/<course_type_id>/<dept_id>/<semester_id>/<category>')
+def category_view(course_type_id, dept_id, semester_id, category):
     """Category page showing downloadable files"""
     data = load_data()
-    if dept_id not in data['departments']:
+    if (course_type_id not in data['course_types'] or 
+        dept_id not in data['course_types'][course_type_id]['departments']):
         flash('Department not found', 'error')
         return redirect(url_for('index'))
     
     # Filter files for this specific category
     filtered_files = [
         f for f in data['files'] 
-        if f['department'] == dept_id and 
+        if f['course_type'] == course_type_id and
+           f['department'] == dept_id and 
            f['semester'] == semester_id and 
            f['category'] == category
     ]
     
-    department_data = data['departments'][dept_id]
+    course_data = data['course_types'][course_type_id]
+    department_data = course_data['departments'][dept_id]
     
     return render_template('category.html',
+                         course_type=course_data,
+                         course_type_id=course_type_id,
                          department=department_data,
                          dept_id=dept_id,
                          semester_id=semester_id,
@@ -180,6 +229,7 @@ def upload():
     if request.method == 'POST':
         try:
             # Get form data
+            course_type = request.form.get('course_type')
             department = request.form.get('department')
             semester = request.form.get('semester')
             category = request.form.get('category')
@@ -227,6 +277,7 @@ def upload():
                     "filename": filename,
                     "original_filename": file.filename,
                     "custom_filename": custom_filename or filename,
+                    "course_type": course_type,
                     "department": department,
                     "semester": semester,
                     "category": category,
@@ -241,6 +292,7 @@ def upload():
                 
                 flash('File uploaded successfully!', 'success')
                 return redirect(url_for('category_view', 
+                              course_type_id=course_type,
                               dept_id=department, 
                               semester_id=semester, 
                               category=category))
@@ -251,7 +303,7 @@ def upload():
             app.logger.error(f"Upload error: {str(e)}")
             flash('An error occurred during upload. Please try again.', 'error')
     
-    return render_template('upload.html', departments=data['departments'])
+    return render_template('upload.html', course_types=data['course_types'])
 
 @app.route('/download/<int:file_id>')
 def download(file_id):
@@ -310,6 +362,7 @@ def delete_file(file_id):
         
         flash('File deleted successfully', 'success')
         return redirect(url_for('category_view', 
+                      course_type_id=file_data['course_type'],
                       dept_id=file_data['department'], 
                       semester_id=file_data['semester'], 
                       category=file_data['category']))
