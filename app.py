@@ -146,6 +146,31 @@ def materials_home():
     data = load_data()
     return render_template('materials/home.html', course_types=data['course_types'])
 
+@app.route('/calculators')
+def calculators_home():
+    """Calculators homepage showing available calculators"""
+    return render_template('calculators/home.html')
+
+@app.route('/calculators/gpa')
+def gpa_calculator():
+    """GPA Calculator page"""
+    return render_template('calculators/gpa.html')
+
+@app.route('/calculators/cgpa')
+def cgpa_calculator():
+    """CGPA Calculator page"""
+    return render_template('calculators/cgpa.html')
+
+@app.route('/calculators/percentage')
+def percentage_calculator():
+    """Percentage Calculator page"""
+    return render_template('calculators/percentage.html')
+
+@app.route('/calculators/internal')
+def internal_calculator():
+    """Internal Marks Calculator page"""
+    return render_template('calculators/internal.html')
+
 @app.route('/course/<course_type_id>')
 def course_type(course_type_id):
     """Course type page showing list of departments"""

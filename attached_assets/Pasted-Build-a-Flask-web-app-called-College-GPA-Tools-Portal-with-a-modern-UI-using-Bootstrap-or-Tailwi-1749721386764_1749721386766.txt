@@ -1,0 +1,64 @@
+Build a Flask web app called "College GPA & Tools Portal" with a modern UI using Bootstrap or Tailwind. The app should have a navigation layout like STUCOR's GPA/CGPA Calc app, with the following 4 main calculator pages:
+
+---
+
+1. **GPA Calculator**
+   - User can input multiple subjects, each with:
+     - Subject name
+     - Grade (dropdown: O, A+, A, B+, B, RA)
+     - Credit (numeric)
+   - Grade mapping:
+     - O = 10, A+ = 9, A = 8, B+ = 7, B = 6, RA = 0
+   - Formula:  
+     `GPA = (Σ (grade point × credit)) / Σ credits`
+   - Display the calculated GPA and summary table.
+
+---
+
+2. **CGPA Calculator**
+   - User can input GPA and total credits for each semester.
+   - Minimum 2 semesters input allowed.
+   - Formula:
+     `CGPA = (Σ (semester GPA × semester credits)) / Σ semester credits`
+   - Display final CGPA result with breakdown.
+
+---
+
+3. **Percentage Calculator**
+   - User inputs GPA (or CGPA).
+   - Formula:  
+     `Percentage = GPA × 10`
+   - Display percentage result instantly.
+
+---
+
+4. **Internal Marks Calculator**
+   - Inputs per subject:
+     - CAT 1, CAT 2, SAT (all out of 100)
+     - Assignment 1 & 2 (out of 100)
+   - Logic:
+     - If CAT 1 is 'AB', use SAT instead for CAT 1.
+     - If CAT 2 is 'AB', use SAT instead for CAT 2.
+     - CAT 1 → convert to 15 marks (best of CAT 1 or SAT)
+     - CAT 2 → convert to 15 marks (best of CAT 2 or SAT)
+     - Assignments averaged, converted to 10 marks.
+     - Viva = fixed 10 marks
+     - Final internal = 15 + 15 + 10 + 10 = **50 marks**
+     - Convert to 100-scale by: `internal_mark × 2`
+   - Show the breakdown and final internal mark (out of 100).
+
+---
+
+### Navigation:
+- Top navigation bar or side menu:
+  - GPA Calculator
+  - CGPA Calculator
+  - Percentage Calculator
+  - Internal Mark Calculator
+
+---
+
+Design Requirements:
+- Use mobile-responsive cards or list styles like in STUCOR.
+- Display all formulae below the result clearly.
+- Clean layout, no JS required unless essential.

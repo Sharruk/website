@@ -91,7 +91,9 @@
                             <i class="fas fa-download"></i>
                         </a>
                         <button class="btn btn-outline-danger" 
-                                onclick="confirmDelete({{ file.id }}, '{{ file.custom_filename }}')" 
+                                data-file-id="{{ file.id }}" 
+                                data-file-name="{{ file.custom_filename }}"
+                                onclick="confirmDelete(this)" 
                                 title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -130,7 +132,9 @@
                         <i class="fas fa-download me-1"></i>Download
                     </a>
                     <button class="btn btn-danger btn-sm" 
-                            onclick="confirmDelete({{ file.id }}, '{{ file.custom_filename }}')">
+                            data-file-id="{{ file.id }}" 
+                            data-file-name="{{ file.custom_filename }}"
+                            onclick="confirmDelete(this)">
                         <i class="fas fa-trash me-1"></i>Delete
                     </button>
                 </div>
@@ -174,9 +178,11 @@
 
 {% block scripts %}
 <script>
-function confirmDelete(fileId, fileName) {
+function confirmDelete(button) {
+    const fileId = button.getAttribute('data-file-id');
+    const fileName = button.getAttribute('data-file-name');
     document.getElementById('fileToDelete').textContent = fileName;
-    document.getElementById('confirmDeleteBtn').href = `/delete/${fileId}`;
+    document.getElementById('confirmDeleteBtn').href = "{{ url_for('delete_file', file_id='FILEID') }}".replace('FILEID', fileId);
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
