@@ -322,5 +322,19 @@
       }
     }
   },
-  "files": []
+  "files": [],
+  "syllabus_files": [
+    {
+      "id": 1,
+      "filename": "syllabus_20250612_084719_Development_of_scientific_tamil.docx",
+      "original_filename": "Development_of_scientific_tamil.docx",
+      "file_size": 59366,
+      "file_extension": "docx",
+      "course_type": "mba",
+      "department": "general_mba",
+      "regulation": "2025",
+      "upload_date": "2025-06-12T08:47:19.315553",
+      "file_path": "uploads/syllabus_20250612_084719_Development_of_scientific_tamil.docx"
+    }
+  ]
 }

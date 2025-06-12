@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configuration
@@ -252,61 +252,95 @@ def upload():
                 return redirect(request.url)
             
             if file and file.filename and allowed_file(file.filename):
-                # Use custom filename if provided, otherwise use original
-                if custom_filename:
-                    filename = secure_filename(custom_filename)
-                    # Add extension if not present
-                    if '.' in file.filename:
-                        ext = file.filename.rsplit('.', 1)[1].lower()
-                        if not filename.endswith('.' + ext):
-                            filename += '.' + ext
-                else:
-                    filename = secure_filename(file.filename)
-                
-                # Handle duplicate filenames
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                counter = 1
-                base_name, extension = os.path.splitext(filename)
-                
-                while os.path.exists(filepath):
-                    filename = f"{base_name}_{counter}{extension}"
+                try:
+                    # Use custom filename if provided, otherwise use original
+                    if custom_filename:
+                        filename = secure_filename(custom_filename)
+                        # Add extension if not present
+                        if '.' in file.filename:
+                            ext = file.filename.rsplit('.', 1)[1].lower()
+                            if not filename.endswith('.' + ext):
+                                filename += '.' + ext
+                    else:
+                        filename = secure_filename(file.filename)
+                    
+                    # Validate filename
+                    if not filename or filename == '':
+                        raise ValueError("Invalid filename after security processing")
+                    
+                    # Handle duplicate filenames
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    counter += 1
+                    counter = 1
+                    base_name, extension = os.path.splitext(filename)
+                    
+                    while os.path.exists(filepath):
+                        filename = f"{base_name}_{counter}{extension}"
+                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        counter += 1
+                    
+                    # Ensure upload directory exists
+                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                    
+                    # Save the file
+                    file.save(filepath)
+                    
+                    # Verify file was saved
+                    if not os.path.exists(filepath):
+                        raise IOError("File was not saved successfully")
+                    
+                    # Generate unique ID safely
+                    max_id = 0
+                    for existing_file in data.get('files', []):
+                        if existing_file.get('id', 0) > max_id:
+                            max_id = existing_file['id']
+                    new_id = max_id + 1
+                    
+                    # Add file metadata to JSON
+                    file_data = {
+                        "id": new_id,
+                        "filename": filename,
+                        "original_filename": file.filename,
+                        "custom_filename": custom_filename or filename,
+                        "course_type": course_type,
+                        "department": department,
+                        "semester": semester,
+                        "category": category,
+                        "subject": subject,
+                        "size": get_file_size(filepath),
+                        "upload_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        "file_path": filepath
+                    }
+                    
+                    data['files'].append(file_data)
+                    save_data(data)
+                    
+                    app.logger.info(f"File uploaded successfully: {filename}")
+                    try:
+                        flash('File uploaded successfully!', 'success')
+                    except:
+                        app.logger.error("Could not flash success message")
+                    
+                    return redirect(url_for('category_view', 
+                                  course_type_id=course_type,
+                                  dept_id=department, 
+                                  semester_id=semester, 
+                                  category=category))
                 
-                # Save the file
-                file.save(filepath)
-                
-                # Add file metadata to JSON
-                file_data = {
-                    "id": len(data['files']) + 1,
-                    "filename": filename,
-                    "original_filename": file.filename,
-                    "custom_filename": custom_filename or filename,
-                    "course_type": course_type,
-                    "department": department,
-                    "semester": semester,
-                    "category": category,
-                    "subject": subject,
-                    "size": get_file_size(filepath),
-                    "upload_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    "file_path": filepath
-                }
-                
-                data['files'].append(file_data)
-                save_data(data)
-                
-                flash('File uploaded successfully!', 'success')
-                return redirect(url_for('category_view', 
-                              course_type_id=course_type,
-                              dept_id=department, 
-                              semester_id=semester, 
-                              category=category))
+                except Exception as file_error:
+                    app.logger.error(f"File processing error: {str(file_error)}")
+                    try:
+                        flash(f'File processing error: {str(file_error)}', 'error')
+                    except:
+                        app.logger.error("Could not flash file processing error")
             else:
                 flash('File type not allowed', 'error')
                 
         except Exception as e:
             app.logger.error(f"Upload error: {str(e)}")
-            flash('An error occurred during upload. Please try again.', 'error')
+            try:
+                flash(f'Upload error: {str(e)}', 'error')
+            except:
+                app.logger.error("Failed to display error message to user")
     
     return render_template('upload.html', course_types=data['course_types'])
 
@@ -563,56 +597,83 @@ def upload_syllabus(course_type, dept_id, regulation):
             return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
         
         if file and file.filename and allowed_file(file.filename):
-            # Load existing data
-            data = load_data()
-            if 'syllabus_files' not in data:
-                data['syllabus_files'] = []
+            try:
+                # Load existing data
+                data = load_data()
+                if 'syllabus_files' not in data:
+                    data['syllabus_files'] = []
+                
+                # Generate unique filename
+                original_filename = file.filename
+                filename = secure_filename(original_filename)
+                
+                # Validate filename
+                if not filename or filename == '':
+                    raise ValueError("Invalid filename after security processing")
+                
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"syllabus_{timestamp}_{filename}"
+                filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+                
+                # Ensure upload directory exists
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                
+                # Save file
+                file.save(filepath)
+                
+                # Verify file was saved
+                if not os.path.exists(filepath):
+                    raise IOError("Syllabus file was not saved successfully")
+                
+                # Get file info
+                file_size = os.path.getsize(filepath)
+                file_extension = filename.rsplit('.', 1)[1].lower()
+                
+                # Generate unique ID safely
+                max_id = 0
+                for existing_file in data.get('syllabus_files', []):
+                    if existing_file.get('id', 0) > max_id:
+                        max_id = existing_file['id']
+                new_id = max_id + 1
+                
+                # Add to data
+                file_info = {
+                    'id': new_id,
+                    'filename': unique_filename,
+                    'original_filename': original_filename,
+                    'file_size': file_size,
+                    'file_extension': file_extension,
+                    'course_type': course_type,
+                    'department': dept_id,
+                    'regulation': regulation,
+                    'upload_date': datetime.now().isoformat(),
+                    'file_path': filepath
+                }
+                
+                data['syllabus_files'].append(file_info)
+                save_data(data)
+                
+                app.logger.info(f"Syllabus uploaded successfully: {original_filename}")
+                try:
+                    flash('Syllabus uploaded successfully!', 'success')
+                except:
+                    app.logger.error("Could not flash syllabus success message")
             
-            # Generate unique filename
-            original_filename = file.filename
-            filename = secure_filename(original_filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            unique_filename = f"syllabus_{timestamp}_{filename}"
-            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
-            
-            # Save file
-            file.save(filepath)
-            
-            # Get file info
-            file_size = os.path.getsize(filepath)
-            file_extension = filename.rsplit('.', 1)[1].lower()
-            
-            # Generate unique ID
-            max_id = 0
-            for existing_file in data['syllabus_files']:
-                if existing_file['id'] > max_id:
-                    max_id = existing_file['id']
-            new_id = max_id + 1
-            
-            # Add to data
-            file_info = {
-                'id': new_id,
-                'filename': unique_filename,
-                'original_filename': filename,
-                'file_size': file_size,
-                'file_extension': file_extension,
-                'course_type': course_type,
-                'department': dept_id,
-                'regulation': regulation,
-                'upload_date': datetime.now().isoformat(),
-                'file_path': filepath
-            }
-            
-            data['syllabus_files'].append(file_info)
-            save_data(data)
-            
-            flash('Syllabus uploaded successfully!', 'success')
+            except Exception as syllabus_error:
+                app.logger.error(f"Syllabus file processing error: {str(syllabus_error)}")
+                try:
+                    flash(f'Syllabus upload error: {str(syllabus_error)}', 'error')
+                except:
+                    app.logger.error("Could not flash syllabus processing error")
         else:
             flash('File type not allowed. Please upload PDF or DOCX files only.', 'error')
     
     except Exception as e:
         app.logger.error(f"Syllabus upload error: {str(e)}")
-        flash('An error occurred during upload. Please try again.', 'error')
+        try:
+            flash(f'Upload error: {str(e)}', 'error')
+        except:
+            app.logger.error("Failed to display syllabus error message to user")
     
     return redirect(url_for('syllabus_regulation', course_type=course_type, dept_id=dept_id, regulation=regulation))
 
