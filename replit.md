@@ -110,6 +110,8 @@ A comprehensive Flask-based web portal designed for college students to upload, 
 - June 19, 2025. Fixed file upload validation and department key normalization
 - June 19, 2025. Added drag-and-drop interface with URL parameter auto-filling
 - June 19, 2025. Resolved "Department not found" issue by normalizing data keys
+- June 19, 2025. Fixed case-insensitive file matching in category routes
+- June 19, 2025. Created consolidated requirements file combining all dependencies
 
 ## User Preferences
 

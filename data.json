@@ -378,6 +378,20 @@
       "size": "337.1 KB",
       "upload_date": "2025-06-19 06:23:02",
       "file_path": "uploads/defination_2_marks.docx"
+    },
+    {
+      "id": 5,
+      "filename": "syllabus_2.docx",
+      "original_filename": "syllabus.docx",
+      "custom_filename": "syllabus_2.docx",
+      "course_type": "pg",
+      "department": "mtech_cse",
+      "semester": "2",
+      "category": "CAT",
+      "subject": "statistics",
+      "size": "12.9 KB",
+      "upload_date": "2025-06-19 07:12:42",
+      "file_path": "uploads/syllabus_2.docx"
     }
   ],
   "syllabus_files": [
