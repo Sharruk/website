@@ -111,6 +111,9 @@
 
 {% block scripts %}
 <script>
+// Global file storage for form validation
+window.selectedFile = null;
+
 // Department data mapping
 const departmentData = {
     UG: ["CSE", "MECH", "EEE", "ECE", "IT", "CHEM", "CIVIL"],
@@ -176,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const semesterEl = document.getElementById('semester');
             const categoryEl = document.getElementById('category');
             const subjectEl = document.getElementById('subject');
+            // Always get the current file input element (may have been replaced by drag-and-drop)
             const fileInputEl = document.getElementById('file');
             
             const courseType = courseTypeEl ? courseTypeEl.value.trim() : '';
@@ -183,7 +187,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const semester = semesterEl ? semesterEl.value.trim() : '';
             const category = categoryEl ? categoryEl.value.trim() : '';
             const subject = subjectEl ? subjectEl.value.trim() : '';
-            const file = fileInputEl && fileInputEl.files && fileInputEl.files.length > 0 ? fileInputEl.files[0] : null;
+            
+            // Check for file in multiple ways to ensure we catch it
+            let file = null;
+            if (fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
+                file = fileInputEl.files[0];
+            }
+            
+            // Also check if there's a file stored globally (for drag-and-drop)
+            if (!file && window.selectedFile) {
+                file = window.selectedFile;
+            }
             
             // Debug logging to help identify the issue
             console.log('Form validation:', {
@@ -283,6 +297,9 @@ function initializeDragAndDrop() {
         
         const file = fileInput.files[0];
         if (file) {
+            // Store file globally for form validation
+            window.selectedFile = file;
+            
             showFilePreview(file);
             
             // Auto-suggest filename
@@ -315,6 +332,9 @@ function initializeDragAndDrop() {
 function clearFile() {
     const fileInput = document.getElementById('file');
     const dropZone = document.getElementById('dropZone');
+    
+    // Clear global file reference
+    window.selectedFile = null;
     
     if (fileInput) fileInput.value = '';
     if (dropZone) dropZone.classList.remove('file-selected');
