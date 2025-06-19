@@ -182,7 +182,7 @@ function confirmDelete(button) {
     const fileId = button.getAttribute('data-file-id');
     const fileName = button.getAttribute('data-file-name');
     document.getElementById('fileToDelete').textContent = fileName;
-    document.getElementById('confirmDeleteBtn').href = "{{ url_for('delete_file', file_id='FILEID') }}".replace('FILEID', fileId);
+    document.getElementById('confirmDeleteBtn').href = '/delete/' + fileId;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 

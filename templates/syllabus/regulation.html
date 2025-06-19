@@ -44,10 +44,9 @@
                 <form action="{{ url_for('upload_syllabus', course_type=course_type_id, dept_id=dept_id, regulation=regulation) }}" 
                       method="POST" enctype="multipart/form-data" class="row g-3">
                     <div class="col-md-8">
-                        <label for="file" class="form-label">Select Syllabus File (PDF or DOCX)</label>
-                        <input type="file" class="form-control" id="file" name="file" 
-                               accept=".pdf,.doc,.docx" required>
-                        <div class="form-text">Maximum file size: 16MB</div>
+                        <label for="file" class="form-label">Select Syllabus File</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">All file types and sizes are supported</div>
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100">

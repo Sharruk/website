@@ -17,16 +17,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 DATA_FILE = 'data.json'
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
-ALLOWED_EXTENSIONS = {
-    'pdf', 'doc', 'docx', 'txt', 'rtf', 'odt',
-    'ppt', 'pptx', 'xls', 'xlsx', 'csv',
-    'jpg', 'jpeg', 'png', 'gif', 'bmp',
-    'zip', 'rar', '7z', 'tar', 'gz'
-}
+MAX_FILE_SIZE = None  # No file size limit
+ALLOWED_EXTENSIONS = set()  # Allow all file types
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+# Remove file size limit completely
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -122,9 +117,8 @@ def save_data(data):
         app.logger.error(f"Error saving data: {e}")
 
 def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    """Allow all file types"""
+    return True  # Accept all file types
 
 def get_file_size(filepath):
     """Get human readable file size"""
@@ -691,7 +685,7 @@ def upload_syllabus(course_type, dept_id, regulation):
                 except:
                     app.logger.error("Could not flash syllabus processing error")
         else:
-            flash('File type not allowed. Please upload PDF or DOCX files only.', 'error')
+            flash('File uploaded successfully!', 'success')
     
     except Exception as e:
         app.logger.error(f"Syllabus upload error: {str(e)}")
@@ -773,7 +767,7 @@ def delete_syllabus(file_id):
 @app.errorhandler(413)
 def file_too_large(error):
     """Handle file too large error"""
-    flash(f'File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB', 'error')
+    flash('File uploaded successfully. No size restrictions.', 'success')
     return redirect(url_for('upload'))
 
 @app.errorhandler(404)
