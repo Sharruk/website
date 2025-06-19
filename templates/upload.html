@@ -111,15 +111,26 @@
 
 {% block scripts %}
 <script>
-// Course types data
-var courseTypesData = {{ course_types|tojson }};
+// Department data mapping
+const departmentData = {
+    UG: ["CSE", "MECH", "EEE", "ECE", "IT", "CHEM", "CIVIL"],
+    PG: ["M.Tech CSE (5-Year)", "M.E Applied Electronics", "M.E Structural", "M.E PED"],
+    MBA: ["General MBA"]
+};
+
+// Semester data mapping
+const semesterData = {
+    UG: ["1", "2", "3", "4", "5", "6", "7", "8"],
+    PG: ["1", "2", "3", "4"],
+    MBA: ["1", "2", "3", "4"]
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Handle course type selection
     const courseTypeSelect = document.getElementById('course_type');
     if (courseTypeSelect) {
         courseTypeSelect.addEventListener('change', function() {
-            const courseTypeId = this.value;
+            const courseType = this.value;
             const departmentSelect = document.getElementById('department');
             const semesterSelect = document.getElementById('semester');
             
@@ -127,46 +138,33 @@ document.addEventListener('DOMContentLoaded', function() {
             departmentSelect.innerHTML = '<option value="">Select Department</option>';
             semesterSelect.innerHTML = '<option value="">Select Semester</option>';
             
-            if (courseTypeId && courseTypesData[courseTypeId] && courseTypesData[courseTypeId].departments) {
-                const departments = courseTypesData[courseTypeId].departments;
+            // Populate departments based on course type
+            if (courseType && departmentData[courseType]) {
+                const departments = departmentData[courseType];
                 
-                for (const [deptId, deptData] of Object.entries(departments)) {
+                departments.forEach(dept => {
                     const option = document.createElement('option');
-                    option.value = deptId;
-                    option.textContent = deptData.name;
+                    option.value = dept;
+                    option.textContent = dept;
                     departmentSelect.appendChild(option);
-                }
+                });
+            }
+            
+            // Populate semesters based on course type
+            if (courseType && semesterData[courseType]) {
+                const semesters = semesterData[courseType];
+                
+                semesters.forEach(sem => {
+                    const option = document.createElement('option');
+                    option.value = sem;
+                    option.textContent = `Semester ${sem}`;
+                    semesterSelect.appendChild(option);
+                });
             }
         });
     }
 
-    // Handle department selection
-    const departmentSelect = document.getElementById('department');
-    if (departmentSelect) {
-        departmentSelect.addEventListener('change', function() {
-            const courseTypeId = document.getElementById('course_type').value;
-            const deptId = this.value;
-            const semesterSelect = document.getElementById('semester');
-            
-            // Clear existing options
-            semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-            
-            if (courseTypeId && deptId && 
-                courseTypesData[courseTypeId] && 
-                courseTypesData[courseTypeId].departments &&
-                courseTypesData[courseTypeId].departments[deptId] &&
-                courseTypesData[courseTypeId].departments[deptId].semesters) {
-                const semesters = courseTypesData[courseTypeId].departments[deptId].semesters;
-                
-                for (const [semId, semData] of Object.entries(semesters)) {
-                    const option = document.createElement('option');
-                    option.value = semId;
-                    option.textContent = semData.name;
-                    semesterSelect.appendChild(option);
-                }
-            }
-        });
-    }
+    // Department selection doesn't need additional logic since semesters are populated by course type
 
     // Form validation
     const uploadForm = document.getElementById('uploadForm');
