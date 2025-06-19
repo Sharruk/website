@@ -140,31 +140,43 @@ document.addEventListener('DOMContentLoaded', function() {
             const departmentSelect = document.getElementById('department');
             const semesterSelect = document.getElementById('semester');
             
+            console.log('Course type changed to:', courseType);
+            
             // Clear existing options
-            departmentSelect.innerHTML = '<option value="">Select Department</option>';
-            semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Select Department</option>';
+            }
+            if (semesterSelect) {
+                semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+            }
             
             // Populate departments based on course type
             if (courseType && departmentData[courseType]) {
                 const departments = departmentData[courseType];
+                console.log('Populating departments:', departments);
                 
                 departments.forEach(dept => {
                     const option = document.createElement('option');
                     option.value = dept;
                     option.textContent = dept;
-                    departmentSelect.appendChild(option);
+                    if (departmentSelect) {
+                        departmentSelect.appendChild(option);
+                    }
                 });
             }
             
             // Populate semesters based on course type
             if (courseType && semesterData[courseType]) {
                 const semesters = semesterData[courseType];
+                console.log('Populating semesters:', semesters);
                 
                 semesters.forEach(sem => {
                     const option = document.createElement('option');
                     option.value = sem;
                     option.textContent = `Semester ${sem}`;
-                    semesterSelect.appendChild(option);
+                    if (semesterSelect) {
+                        semesterSelect.appendChild(option);
+                    }
                 });
             }
         });
@@ -189,15 +201,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const category = categoryEl ? categoryEl.value.trim() : '';
             const subject = subjectEl ? subjectEl.value.trim() : '';
             
-            // Primary file source: global storage (most reliable for drag-and-drop)
-            let file = window.selectedFile || null;
-            
-            // Backup: check file input element
+            // Get file from multiple sources
+            let file = null;
             const fileInputEl = document.getElementById('file');
-            if (!file && fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
+            
+            // Check file input first
+            if (fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
                 file = fileInputEl.files[0];
-                // Update global storage if we found a file
-                window.selectedFile = file;
+            }
+            
+            // If no file in input, check global storage
+            if (!file && window.selectedFile) {
+                file = window.selectedFile;
+                
+                // Try to set the file back to the input element
+                if (fileInputEl) {
+                    try {
+                        const dt = new DataTransfer();
+                        dt.items.add(window.selectedFile);
+                        fileInputEl.files = dt.files;
+                        console.log('File restored to input element');
+                    } catch (error) {
+                        console.log('Could not restore file to input:', error);
+                    }
+                }
             }
             
             // Debug logging to help identify the issue
@@ -285,23 +312,46 @@ function autoFillFromURL() {
     }
     
     // Auto-fill department after dropdown population
-    if (department) {
+    if (department && courseType) {
         setTimeout(() => {
             const departmentSelect = document.getElementById('department');
-            if (departmentSelect && departmentData[courseType?.toUpperCase()]) {
+            if (departmentSelect && departmentData[courseType.toUpperCase()]) {
                 // Find the correct department name
                 const departments = departmentData[courseType.toUpperCase()];
-                const matchingDept = departments.find(d => 
-                    d.toLowerCase().includes(department.toLowerCase()) || 
-                    department.toLowerCase().includes(d.toLowerCase())
-                );
+                let matchingDept = null;
+                
+                // Try exact match first
+                matchingDept = departments.find(d => d.toLowerCase() === department.toLowerCase());
+                
+                // If no exact match, try partial match
+                if (!matchingDept) {
+                    matchingDept = departments.find(d => 
+                        d.toLowerCase().includes(department.toLowerCase()) || 
+                        department.toLowerCase().includes(d.toLowerCase())
+                    );
+                }
+                
+                // Map common department abbreviations
+                if (!matchingDept) {
+                    const deptMap = {
+                        'cse': 'CSE',
+                        'mtech_cse': 'M.Tech CSE (5-Year)',
+                        'applied_electronics': 'M.E Applied Electronics',
+                        'structural': 'M.E Structural',
+                        'ped': 'M.E PED',
+                        'general_mba': 'General MBA'
+                    };
+                    matchingDept = deptMap[department.toLowerCase()] || departments.find(d => 
+                        d.toLowerCase().replace(/[^a-z]/g, '').includes(department.toLowerCase().replace(/[^a-z]/g, ''))
+                    );
+                }
                 
                 if (matchingDept) {
                     departmentSelect.value = matchingDept;
                     console.log('Setting department to:', matchingDept);
                 }
             }
-        }, 200);
+        }, 300);
     }
     
     // Auto-fill semester
