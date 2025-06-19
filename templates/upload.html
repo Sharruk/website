@@ -129,6 +129,9 @@ const semesterData = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fill form based on URL parameters
+    autoFillFromURL();
+    
     // Handle course type selection
     const courseTypeSelect = document.getElementById('course_type');
     if (courseTypeSelect) {
@@ -238,6 +241,54 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDragAndDrop();
 });
 
+function autoFillFromURL() {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseType = urlParams.get('course_type');
+    const department = urlParams.get('department');
+    const semester = urlParams.get('semester');
+    const category = urlParams.get('category');
+    
+    // Auto-fill course type
+    if (courseType) {
+        const courseTypeSelect = document.getElementById('course_type');
+        if (courseTypeSelect) {
+            courseTypeSelect.value = courseType;
+            courseTypeSelect.dispatchEvent(new Event('change')); // Trigger department population
+        }
+    }
+    
+    // Auto-fill department after a brief delay to allow dropdown population
+    if (department) {
+        setTimeout(() => {
+            const departmentSelect = document.getElementById('department');
+            if (departmentSelect) {
+                departmentSelect.value = department;
+            }
+        }, 100);
+    }
+    
+    // Auto-fill semester
+    if (semester) {
+        setTimeout(() => {
+            const semesterSelect = document.getElementById('semester');
+            if (semesterSelect) {
+                semesterSelect.value = semester;
+            }
+        }, 150);
+    }
+    
+    // Auto-fill category
+    if (category) {
+        const categorySelect = document.getElementById('category');
+        if (categorySelect) {
+            categorySelect.value = category;
+        }
+    }
+    
+    console.log('Auto-filled from URL:', { courseType, department, semester, category });
+}
+
 function initializeDragAndDrop() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('file');
@@ -292,6 +343,7 @@ function initializeDragAndDrop() {
 
     function handleFileSelect() {
         if (!fileInput.files || fileInput.files.length === 0) {
+            console.log('No files selected in handleFileSelect');
             return;
         }
         
@@ -299,6 +351,7 @@ function initializeDragAndDrop() {
         if (file) {
             // Store file globally for form validation
             window.selectedFile = file;
+            console.log('File selected:', file.name, 'Size:', file.size);
             
             showFilePreview(file);
             
