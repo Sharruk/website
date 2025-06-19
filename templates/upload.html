@@ -170,17 +170,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(e) {
-            const courseType = document.getElementById('course_type').value;
-            const department = document.getElementById('department').value;
-            const semester = document.getElementById('semester').value;
-            const category = document.getElementById('category').value;
-            const subject = document.getElementById('subject').value.trim();
-            const fileInput = document.getElementById('file');
-            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+            // Get form field values
+            const courseTypeEl = document.getElementById('course_type');
+            const departmentEl = document.getElementById('department');
+            const semesterEl = document.getElementById('semester');
+            const categoryEl = document.getElementById('category');
+            const subjectEl = document.getElementById('subject');
+            const fileInputEl = document.getElementById('file');
             
-            if (!courseType || !department || !semester || !category || !subject || !file) {
+            const courseType = courseTypeEl ? courseTypeEl.value.trim() : '';
+            const department = departmentEl ? departmentEl.value.trim() : '';
+            const semester = semesterEl ? semesterEl.value.trim() : '';
+            const category = categoryEl ? categoryEl.value.trim() : '';
+            const subject = subjectEl ? subjectEl.value.trim() : '';
+            const file = fileInputEl && fileInputEl.files && fileInputEl.files.length > 0 ? fileInputEl.files[0] : null;
+            
+            // Debug logging to help identify the issue
+            console.log('Form validation:', {
+                courseType: courseType,
+                department: department,
+                semester: semester,
+                category: category,
+                subject: subject,
+                file: file ? file.name : 'No file selected'
+            });
+            
+            // Check each field individually and provide specific error messages
+            let missingFields = [];
+            
+            if (!courseType) missingFields.push('Course Type');
+            if (!department) missingFields.push('Department');
+            if (!semester) missingFields.push('Semester');
+            if (!category) missingFields.push('Category');
+            if (!subject) missingFields.push('Subject Name');
+            if (!file) missingFields.push('File');
+            
+            if (missingFields.length > 0) {
                 e.preventDefault();
-                alert('Please fill in all required fields and select a file.');
+                alert('Please fill in the following fields: ' + missingFields.join(', '));
                 return false;
             }
             
