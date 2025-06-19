@@ -182,8 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const semesterEl = document.getElementById('semester');
             const categoryEl = document.getElementById('category');
             const subjectEl = document.getElementById('subject');
-            // Always get the current file input element (may have been replaced by drag-and-drop)
-            const fileInputEl = document.getElementById('file');
             
             const courseType = courseTypeEl ? courseTypeEl.value.trim() : '';
             const department = departmentEl ? departmentEl.value.trim() : '';
@@ -191,15 +189,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const category = categoryEl ? categoryEl.value.trim() : '';
             const subject = subjectEl ? subjectEl.value.trim() : '';
             
-            // Check for file in multiple ways to ensure we catch it
-            let file = null;
-            if (fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
-                file = fileInputEl.files[0];
-            }
+            // Primary file source: global storage (most reliable for drag-and-drop)
+            let file = window.selectedFile || null;
             
-            // Also check if there's a file stored globally (for drag-and-drop)
-            if (!file && window.selectedFile) {
-                file = window.selectedFile;
+            // Backup: check file input element
+            const fileInputEl = document.getElementById('file');
+            if (!file && fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
+                file = fileInputEl.files[0];
+                // Update global storage if we found a file
+                window.selectedFile = file;
             }
             
             // Debug logging to help identify the issue
@@ -232,14 +230,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // If validation passes, ensure the file is properly set in the form
-            if (file && window.selectedFile && !fileInputEl.files?.length) {
-                console.log('Setting file from global storage to form input');
-                // Create a new DataTransfer object to set files
-                const dt = new DataTransfer();
-                dt.items.add(window.selectedFile);
-                fileInputEl.files = dt.files;
+            // Ensure file is properly set in the form input for submission
+            if (file && fileInputEl) {
+                try {
+                    if (!fileInputEl.files || fileInputEl.files.length === 0) {
+                        console.log('Setting file from global storage to form input');
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        fileInputEl.files = dt.files;
+                    }
+                } catch (error) {
+                    console.log('Error setting file to input:', error);
+                }
             }
+            
+            console.log('Form validation passed. Proceeding with upload.');
             
             // Show loading state
             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -397,7 +402,7 @@ function initializeDragAndDrop() {
     }
 
     function showFilePreview(file) {
-        // Show compact version with file info
+        // Show compact version with file info but keep the file input element
         dropZone.innerHTML = `
             <div class="drop-zone-compact">
                 <i class="fas fa-file-alt fa-2x text-success me-3"></i>
@@ -409,8 +414,20 @@ function initializeDragAndDrop() {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            <input type="file" class="d-none" id="file" name="file" required>
         `;
         dropZone.classList.add('file-selected');
+        
+        // Re-attach the file to the new input element
+        const newFileInput = document.getElementById('file');
+        if (newFileInput && window.selectedFile) {
+            const dt = new DataTransfer();
+            dt.items.add(window.selectedFile);
+            newFileInput.files = dt.files;
+            
+            // Re-attach event listener
+            newFileInput.addEventListener('change', handleFileSelect, false);
+        }
     }
 }
 
