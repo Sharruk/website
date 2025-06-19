@@ -224,13 +224,13 @@ def category_view(course_type_id, dept_id, semester_id, category):
         flash('Department not found', 'error')
         return redirect(url_for('index'))
     
-    # Filter files for this specific category
+    # Filter files for this specific category (case-insensitive matching)
     filtered_files = [
         f for f in data['files'] 
-        if f['course_type'] == course_type_id and
-           f['department'] == dept_id and 
+        if f['course_type'].lower() == course_type_id.lower() and
+           f['department'].lower() == dept_id.lower() and 
            f['semester'] == semester_id and 
-           f['category'] == category
+           f['category'].upper() == category.upper()
     ]
     
     course_data = data['course_types'][course_type_id]
