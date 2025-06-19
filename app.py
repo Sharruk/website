@@ -314,14 +314,43 @@ def upload():
                             max_id = existing_file['id']
                     new_id = max_id + 1
                     
+                    # Normalize department and course type to match data structure keys
+                    def normalize_course_type(ct):
+                        return ct.lower() if ct else ct
+                    
+                    def normalize_department(dept, course_type):
+                        if not dept:
+                            return dept
+                        
+                        # Map frontend department names to data structure keys
+                        dept_map = {
+                            'CSE': 'cse',
+                            'MECH': 'mech', 
+                            'EEE': 'eee',
+                            'ECE': 'ece',
+                            'IT': 'it',
+                            'CHEM': 'chem',
+                            'CIVIL': 'civil',
+                            'M.Tech CSE (5-Year)': 'mtech_cse',
+                            'M.E Applied Electronics': 'applied_electronics',
+                            'M.E Structural': 'structural',
+                            'M.E PED': 'ped',
+                            'General MBA': 'general_mba'
+                        }
+                        
+                        return dept_map.get(dept, dept.lower())
+                    
+                    normalized_course_type = normalize_course_type(course_type)
+                    normalized_department = normalize_department(department, course_type)
+                    
                     # Add file metadata to JSON
                     file_data = {
                         "id": new_id,
                         "filename": filename,
                         "original_filename": file.filename,
                         "custom_filename": custom_filename or filename,
-                        "course_type": course_type,
-                        "department": department,
+                        "course_type": normalized_course_type,
+                        "department": normalized_department,
                         "semester": semester,
                         "category": category,
                         "subject": subject,
@@ -340,8 +369,8 @@ def upload():
                         app.logger.error("Could not flash success message")
                     
                     return redirect(url_for('category_view', 
-                                  course_type_id=course_type,
-                                  dept_id=department, 
+                                  course_type_id=normalized_course_type,
+                                  dept_id=normalized_department, 
                                   semester_id=semester, 
                                   category=category))
                 

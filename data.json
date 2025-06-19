@@ -350,6 +350,34 @@
       "size": "58.0 KB",
       "upload_date": "2025-06-19 04:42:23",
       "file_path": "uploads/Development_of_scientific_tamil_1.docx"
+    },
+    {
+      "id": 3,
+      "filename": "Development_of_scientific_tamil_2.docx",
+      "original_filename": "Development of scientific tamil.docx",
+      "custom_filename": "Development_of_scientific_tamil_2.docx",
+      "course_type": "UG",
+      "department": "EEE",
+      "semester": "1",
+      "category": "CAT",
+      "subject": "tamil and technology",
+      "size": "58.0 KB",
+      "upload_date": "2025-06-19 06:19:40",
+      "file_path": "uploads/Development_of_scientific_tamil_2.docx"
+    },
+    {
+      "id": 4,
+      "filename": "defination_2_marks.docx",
+      "original_filename": "defination 2 marks.docx",
+      "custom_filename": "defination_2_marks.docx",
+      "course_type": "UG",
+      "department": "IT",
+      "semester": "1",
+      "category": "ESE",
+      "subject": "maths",
+      "size": "337.1 KB",
+      "upload_date": "2025-06-19 06:23:02",
+      "file_path": "uploads/defination_2_marks.docx"
     }
   ],
   "syllabus_files": [
