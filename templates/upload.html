@@ -209,7 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 semester: semester,
                 category: category,
                 subject: subject,
-                file: file ? file.name : 'No file selected'
+                file: file ? file.name : 'No file selected',
+                fileInput: fileInputEl ? 'exists' : 'missing',
+                fileInputFiles: fileInputEl ? fileInputEl.files?.length : 'N/A',
+                globalFile: window.selectedFile ? window.selectedFile.name : 'No global file'
             });
             
             // Check each field individually and provide specific error messages
@@ -224,8 +227,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (missingFields.length > 0) {
                 e.preventDefault();
+                console.log('Validation failed. Missing fields:', missingFields);
                 alert('Please fill in the following fields: ' + missingFields.join(', '));
                 return false;
+            }
+            
+            // If validation passes, ensure the file is properly set in the form
+            if (file && window.selectedFile && !fileInputEl.files?.length) {
+                console.log('Setting file from global storage to form input');
+                // Create a new DataTransfer object to set files
+                const dt = new DataTransfer();
+                dt.items.add(window.selectedFile);
+                fileInputEl.files = dt.files;
             }
             
             // Show loading state
@@ -249,23 +262,41 @@ function autoFillFromURL() {
     const semester = urlParams.get('semester');
     const category = urlParams.get('category');
     
+    console.log('URL params:', { courseType, department, semester, category });
+    
     // Auto-fill course type
     if (courseType) {
         const courseTypeSelect = document.getElementById('course_type');
         if (courseTypeSelect) {
-            courseTypeSelect.value = courseType;
-            courseTypeSelect.dispatchEvent(new Event('change')); // Trigger department population
+            // Convert to uppercase for consistency
+            const courseTypeValue = courseType.toUpperCase();
+            courseTypeSelect.value = courseTypeValue;
+            console.log('Setting course type to:', courseTypeValue);
+            
+            // Trigger change event to populate departments and semesters
+            const changeEvent = new Event('change', { bubbles: true });
+            courseTypeSelect.dispatchEvent(changeEvent);
         }
     }
     
-    // Auto-fill department after a brief delay to allow dropdown population
+    // Auto-fill department after dropdown population
     if (department) {
         setTimeout(() => {
             const departmentSelect = document.getElementById('department');
-            if (departmentSelect) {
-                departmentSelect.value = department;
+            if (departmentSelect && departmentData[courseType?.toUpperCase()]) {
+                // Find the correct department name
+                const departments = departmentData[courseType.toUpperCase()];
+                const matchingDept = departments.find(d => 
+                    d.toLowerCase().includes(department.toLowerCase()) || 
+                    department.toLowerCase().includes(d.toLowerCase())
+                );
+                
+                if (matchingDept) {
+                    departmentSelect.value = matchingDept;
+                    console.log('Setting department to:', matchingDept);
+                }
             }
-        }, 100);
+        }, 200);
     }
     
     // Auto-fill semester
@@ -274,19 +305,20 @@ function autoFillFromURL() {
             const semesterSelect = document.getElementById('semester');
             if (semesterSelect) {
                 semesterSelect.value = semester;
+                console.log('Setting semester to:', semester);
             }
-        }, 150);
+        }, 300);
     }
     
-    // Auto-fill category
+    // Auto-fill category (convert to uppercase for consistency)
     if (category) {
         const categorySelect = document.getElementById('category');
         if (categorySelect) {
-            categorySelect.value = category;
+            const categoryValue = category.toUpperCase();
+            categorySelect.value = categoryValue;
+            console.log('Setting category to:', categoryValue);
         }
     }
-    
-    console.log('Auto-filled from URL:', { courseType, department, semester, category });
 }
 
 function initializeDragAndDrop() {

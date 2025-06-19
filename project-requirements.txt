@@ -6,9 +6,9 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 
 # Web Server for Production
-gunicorn==21.2.0
+gunicorn==23.0.0
 
-# Database Support
+# Database Support (PostgreSQL)
 SQLAlchemy==2.0.23
 psycopg2-binary==2.9.9
 
@@ -24,10 +24,17 @@ Pillow==10.1.0
 # AI Integration (Optional)
 openai==1.3.9
 
-# Development Utilities
+# Development and Configuration
 python-dotenv==1.0.0
 python-dateutil==2.8.2
 six==1.16.0
+
+# File Processing
+openpyxl==3.1.2
+python-magic==0.4.27
+
+# JSON Processing
+simplejson==3.19.2
 
 # Installation Instructions:
 # 1. Create virtual environment: python -m venv venv
@@ -35,4 +42,11 @@ six==1.16.0
 #    - Windows: venv\Scripts\activate
 #    - Linux/Mac: source venv/bin/activate
 # 3. Install dependencies: pip install -r project-requirements.txt
-# 4. Run the application: python main.py or gunicorn main:app
+# 4. Run the application: python main.py or gunicorn --bind 0.0.0.0:5000 main:app
+
+# Deployment Notes:
+# - Uses JSON-based file storage (data.json)
+# - Supports all file types and sizes
+# - Drag-and-drop interface with visual feedback
+# - Auto-fill forms from navigation URLs
+# - PostgreSQL ready but currently using JSON storage
