@@ -169,7 +169,14 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete</a>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        <span class="delete-text">Delete</span>
+                        <span class="delete-spinner d-none">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Deleting...
+                        </span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -182,8 +189,88 @@ function confirmDelete(button) {
     const fileId = button.getAttribute('data-file-id');
     const fileName = button.getAttribute('data-file-name');
     document.getElementById('fileToDelete').textContent = fileName;
-    document.getElementById('confirmDeleteBtn').href = '/delete/' + fileId;
+    
+    // Set up the delete form
+    const deleteForm = document.getElementById('deleteForm');
+    deleteForm.action = '/delete/' + fileId;
+    
+    // Handle form submission with loading state
+    deleteForm.onsubmit = function() {
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteText = deleteBtn.querySelector('.delete-text');
+        const deleteSpinner = deleteBtn.querySelector('.delete-spinner');
+        
+        deleteText.classList.add('d-none');
+        deleteSpinner.classList.remove('d-none');
+        deleteBtn.disabled = true;
+        
+        // Show toast notification
+        showToast('Deleting file...', 'info');
+        
+        return true; // Allow form submission
+    };
+    
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-${getToastIcon(type)} me-2 text-${getToastColor(type)}"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+function getToastIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+function getToastColor(type) {
+    const colors = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'primary'
+    };
+    return colors[type] || 'primary';
 }
 
 // View toggle functionality

@@ -98,8 +98,13 @@
 
                     <!-- Submit Button -->
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-upload me-2"></i>Upload File
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                            <span class="upload-text">
+                                <i class="fas fa-upload me-2"></i>Upload File
+                            </span>
+                            <span class="upload-spinner d-none">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Uploading...
+                            </span>
                         </button>
                     </div>
                 </form>
@@ -274,10 +279,19 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Form validation passed. Proceeding with upload.');
             
             // Show loading state
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('uploadBtn');
             if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+                const uploadText = submitBtn.querySelector('.upload-text');
+                const uploadSpinner = submitBtn.querySelector('.upload-spinner');
+                
+                if (uploadText && uploadSpinner) {
+                    uploadText.classList.add('d-none');
+                    uploadSpinner.classList.remove('d-none');
+                }
                 submitBtn.disabled = true;
+                
+                // Show toast notification
+                showToast('Uploading file...', 'info');
             }
         });
     }
@@ -520,6 +534,66 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-${getToastIcon(type)} me-2 text-${getToastColor(type)}"></i>
+                <strong class="me-auto">Upload</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+
+function getToastIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-triangle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+function getToastColor(type) {
+    const colors = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'primary'
+    };
+    return colors[type] || 'primary';
 }
 </script>
 

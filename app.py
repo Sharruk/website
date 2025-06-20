@@ -392,6 +392,48 @@ def upload():
     
     return render_template('upload.html', course_types=data['course_types'])
 
+@app.route('/delete/<int:file_id>', methods=['POST', 'GET'])
+def delete_file(file_id):
+    """Delete a file"""
+    try:
+        data = load_data()
+        file_data = None
+        
+        # Find the file
+        for file_info in data.get('files', []):
+            if file_info.get('id') == file_id:
+                file_data = file_info
+                break
+        
+        if not file_data:
+            flash('File not found', 'error')
+            return redirect(url_for('index'))
+        
+        # Delete physical file
+        file_path = file_data.get('file_path')
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+            app.logger.info(f"Physical file deleted: {file_path}")
+        
+        # Remove from data.json
+        data['files'] = [f for f in data['files'] if f.get('id') != file_id]
+        save_data(data)
+        
+        flash('File deleted successfully!', 'success')
+        app.logger.info(f"File deleted successfully: {file_data.get('custom_filename', 'Unknown')}")
+        
+        # Redirect back to the category page
+        return redirect(url_for('category_view',
+                              course_type_id=file_data.get('course_type', 'ug'),
+                              dept_id=file_data.get('department', 'cse'),
+                              semester_id=file_data.get('semester', '1'),
+                              category=file_data.get('category', 'CAT')))
+        
+    except Exception as e:
+        app.logger.error(f"Delete error: {str(e)}")
+        flash(f'Delete error: {str(e)}', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/download/<int:file_id>')
 def download(file_id):
     """Download a file"""
@@ -418,45 +460,6 @@ def download(file_id):
     except Exception as e:
         app.logger.error(f"Download error: {str(e)}")
         flash('Error downloading file', 'error')
-        return redirect(url_for('index'))
-
-@app.route('/delete/<int:file_id>')
-def delete_file(file_id):
-    """Delete a file"""
-    try:
-        data = load_data()
-        file_data = None
-        file_index = -1
-        
-        for i, f in enumerate(data['files']):
-            if f['id'] == file_id:
-                file_data = f
-                file_index = i
-                break
-        
-        if not file_data:
-            flash('File not found', 'error')
-            return redirect(url_for('index'))
-        
-        # Delete physical file
-        filepath = file_data['file_path']
-        if os.path.exists(filepath) and os.path.isfile(filepath):
-            os.remove(filepath)
-        
-        # Remove from JSON data
-        data['files'].pop(file_index)
-        save_data(data)
-        
-        flash('File deleted successfully', 'success')
-        return redirect(url_for('category_view', 
-                      course_type_id=file_data['course_type'],
-                      dept_id=file_data['department'], 
-                      semester_id=file_data['semester'], 
-                      category=file_data['category']))
-    
-    except Exception as e:
-        app.logger.error(f"Delete error: {str(e)}")
-        flash('Error deleting file', 'error')
         return redirect(url_for('index'))
 
 # Syllabus Routes
@@ -753,7 +756,7 @@ def download_syllabus(file_id):
         flash('Error downloading file', 'error')
         return redirect(url_for('syllabus_home'))
 
-@app.route('/syllabus/delete/<int:file_id>')
+@app.route('/syllabus/delete/<int:file_id>', methods=['POST', 'GET'])
 def delete_syllabus(file_id):
     """Delete syllabus file"""
     try:
