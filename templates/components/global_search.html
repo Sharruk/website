@@ -1,6 +1,22 @@
 <!-- Global Search Component -->
 <div class="card shadow-sm mb-4" id="globalSearchCard">
-    <div class="card-body">
+    <!-- Collapsed Search Bar -->
+    <div class="card-body py-3" id="globalSearchCollapsed">
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0" id="globalSearchTrigger" 
+                   placeholder="Click to search files by subject name, code, or filename..." 
+                   readonly style="cursor: pointer; background-color: #f8f9fa;">
+            <button class="btn btn-outline-secondary" type="button" id="globalExpandBtn">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Expanded Search Interface -->
+    <div class="card-body" id="globalSearchExpanded" style="display: none;">
         <!-- Basic Search Bar -->
         <div class="mb-3">
             <label for="globalBasicSearch" class="form-label">
@@ -11,6 +27,9 @@
                        placeholder="Type to search for subjects, codes, or filenames...">
                 <button class="btn btn-outline-secondary" type="button" id="globalSearchBtn">
                     <i class="fas fa-search"></i>
+                </button>
+                <button class="btn btn-outline-danger" type="button" id="globalCollapseBtn">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
@@ -112,6 +131,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeGlobalSearch() {
+    const searchTrigger = document.getElementById('globalSearchTrigger');
+    const expandBtn = document.getElementById('globalExpandBtn');
+    const collapseBtn = document.getElementById('globalCollapseBtn');
+    const collapsed = document.getElementById('globalSearchCollapsed');
+    const expanded = document.getElementById('globalSearchExpanded');
     const basicSearch = document.getElementById('globalBasicSearch');
     const smartToggle = document.getElementById('globalSmartToggle');
     const advancedFilters = document.getElementById('globalAdvancedFilters');
@@ -119,7 +143,27 @@ function initializeGlobalSearch() {
     const closeResultsBtn = document.getElementById('globalCloseResults');
     const clearFiltersBtn = document.getElementById('globalClearFilters');
     
-    if (!basicSearch) return; // Component not loaded
+    if (!searchTrigger) return; // Component not loaded
+    
+    // Expand/Collapse functionality
+    function expandSearch() {
+        collapsed.style.display = 'none';
+        expanded.style.display = 'block';
+        basicSearch.focus();
+    }
+    
+    function collapseSearch() {
+        expanded.style.display = 'none';
+        collapsed.style.display = 'block';
+        // Clear search results when collapsing
+        document.getElementById('globalSearchResults').style.display = 'none';
+        clearAllGlobalFilters();
+    }
+    
+    // Event listeners for expand/collapse
+    searchTrigger.addEventListener('click', expandSearch);
+    expandBtn.addEventListener('click', expandSearch);
+    collapseBtn.addEventListener('click', collapseSearch);
     
     // Basic search functionality
     basicSearch.addEventListener('input', debounceGlobalSearch(performGlobalSearch, 300));
@@ -426,11 +470,17 @@ function clearGlobalAdvancedFilters() {
 }
 
 function clearAllGlobalFilters() {
-    document.getElementById('globalBasicSearch').value = '';
-    document.getElementById('globalSmartToggle').checked = false;
-    document.getElementById('globalAdvancedFilters').style.display = 'none';
+    const basicSearch = document.getElementById('globalBasicSearch');
+    const smartToggle = document.getElementById('globalSmartToggle');
+    const advancedFilters = document.getElementById('globalAdvancedFilters');
+    const searchResults = document.getElementById('globalSearchResults');
+    
+    if (basicSearch) basicSearch.value = '';
+    if (smartToggle) smartToggle.checked = false;
+    if (advancedFilters) advancedFilters.style.display = 'none';
+    if (searchResults) searchResults.style.display = 'none';
+    
     clearGlobalAdvancedFilters();
-    document.getElementById('globalSearchResults').style.display = 'none';
 }
 
 function debounceGlobalSearch(func, wait) {
@@ -540,6 +590,23 @@ function showGlobalToast(message, type = 'info') {
 <style>
 #globalSearchCard {
     border-left: 4px solid #0d6efd;
+}
+
+#globalSearchTrigger:focus {
+    box-shadow: none;
+    border-color: #86b7fe;
+}
+
+#globalSearchCollapsed .input-group-text {
+    border-color: #dee2e6;
+}
+
+#globalExpandBtn {
+    transition: transform 0.2s ease;
+}
+
+#globalExpandBtn:hover {
+    transform: rotate(180deg);
 }
 
 #globalSearchResults .card {
