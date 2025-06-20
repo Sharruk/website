@@ -324,6 +324,28 @@ def api_search():
             'count': 0
         }), 500
 
+def highlight_search_terms(file, query):
+    """Add highlighting to search terms in file data"""
+    highlighted_file = file.copy()
+    
+    # Fields to highlight
+    highlight_fields = ['subject', 'custom_filename', 'original_filename']
+    
+    for field in highlight_fields:
+        if field in highlighted_file and highlighted_file[field]:
+            original_text = highlighted_file[field]
+            # Simple highlighting - wrap matched terms with <mark> tags
+            highlighted_text = original_text
+            
+            # Case-insensitive replacement
+            import re
+            pattern = re.compile(re.escape(query), re.IGNORECASE)
+            highlighted_text = pattern.sub(f'<mark>{query}</mark>', highlighted_text)
+            
+            highlighted_file[f'{field}_highlighted'] = highlighted_text
+    
+    return highlighted_file
+
 @app.route('/search')
 def search():
     """Search page for all files"""

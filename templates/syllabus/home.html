@@ -25,6 +25,14 @@
                 <p class="text-muted mb-0">Access course syllabi by program type</p>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Global Search Component -->
+{% include 'components/global_search.html' %}
+
+<div class="row">
+    <div class="col-12">
 
         <div class="row g-4">
             {% for course_id, course in course_types.items() %}

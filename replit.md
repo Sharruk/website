@@ -115,6 +115,7 @@ A comprehensive Flask-based web portal designed for college students to upload, 
 - June 20, 2025. Project cleanup for GitHub deployment - removed unnecessary files, cleared uploaded files, created .gitignore, finalized requirements.txt
 - June 20, 2025. Enhanced portal functionality - fixed delete functionality with proper file and database cleanup, improved upload form with auto-fill from URL parameters, added loading states and toast notifications for better user experience
 - June 20, 2025. Implemented comprehensive smart search functionality - added dedicated search page with live filtering, advanced filters (course type, department, semester, category), responsive design with table/card views, and integrated search access throughout the portal
+- June 20, 2025. Built JSON-based global search system - created modular search component for question papers and syllabus pages, implemented live filtering with highlighting, added delete functionality from search results, fully responsive design without database dependency
 
 ## User Preferences
 

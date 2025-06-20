@@ -268,10 +268,10 @@ function displayGlobalSearchResults(results) {
                     <div class="d-flex align-items-start mb-2">
                         <i class="fas fa-${result.file_type === 'Syllabus' ? 'book' : 'file-pdf'} text-${result.file_type === 'Syllabus' ? 'success' : 'danger'} fa-2x me-3"></i>
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">${result.subject_name || result.custom_filename}</h6>
-                            ${result.subject_code ? `<p class="card-text small text-primary mb-1"><strong>Code:</strong> ${result.subject_code}</p>` : ''}
+                            <h6 class="card-title mb-1">${result.subject_highlighted || result.subject || result.custom_filename_highlighted || result.custom_filename}</h6>
                             <p class="card-text small text-muted mb-1">
-                                <i class="fas fa-tag me-1"></i>${result.file_type}
+                                <i class="fas fa-tag me-1"></i>
+                                <span class="badge bg-${result.file_type === 'Syllabus' ? 'success' : 'info'}">${result.file_type}</span>
                             </p>
                             <p class="card-text small mb-1">
                                 <span class="badge bg-${result.course_type === 'UG' ? 'primary' : result.course_type === 'PG' ? 'success' : 'warning'} me-1">
@@ -289,8 +289,14 @@ function displayGlobalSearchResults(results) {
                         <a href="/download/${result.id}" class="btn btn-success btn-sm">
                             <i class="fas fa-download me-1"></i>Download
                         </a>
+                        <button class="btn btn-outline-danger btn-sm" 
+                                data-file-id="${result.id}" 
+                                data-file-name="${result.custom_filename}"
+                                onclick="confirmGlobalDelete(this)">
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </button>
                         <a href="/category/${result.course_type}/${result.department}/${result.semester}/${result.category}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-folder-open me-1"></i>View Category
+                            <i class="fas fa-folder-open me-1"></i>View
                         </a>
                     </div>
                 </div>
@@ -438,6 +444,97 @@ function debounceGlobalSearch(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+// Global delete function for search results
+function confirmGlobalDelete(button) {
+    const fileId = button.getAttribute('data-file-id');
+    const fileName = button.getAttribute('data-file-name');
+    
+    if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+        // Show loading state
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+        button.disabled = true;
+        
+        // Submit delete request
+        fetch(`/delete/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove the card from view
+                const card = button.closest('.col-md-6, .col-lg-4');
+                if (card) {
+                    card.remove();
+                }
+                
+                // Update results count
+                const currentCount = parseInt(document.getElementById('globalResultsCount').textContent);
+                document.getElementById('globalResultsCount').textContent = currentCount - 1;
+                
+                // Show success message
+                showGlobalToast('File deleted successfully!', 'success');
+                
+                // If no results left, show no results message
+                if (currentCount - 1 === 0) {
+                    document.getElementById('globalResultsList').style.display = 'none';
+                    document.getElementById('globalNoResults').style.display = 'block';
+                }
+            } else {
+                throw new Error('Delete failed');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+            showGlobalToast('Failed to delete file. Please try again.', 'error');
+        });
+    }
+}
+
+// Toast notification for global search
+function showGlobalToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('globalToastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'globalToastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'globalToast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2 text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'}"></i>
+                <strong class="me-auto">Search</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
 </script>
 
 <style>
@@ -452,6 +549,14 @@ function debounceGlobalSearch(func, wait) {
 #globalSearchResults .card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+mark {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 500;
 }
 
 .spinner-border {
