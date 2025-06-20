@@ -113,6 +113,7 @@ A comprehensive Flask-based web portal designed for college students to upload, 
 - June 19, 2025. Fixed case-insensitive file matching in category routes
 - June 19, 2025. Created consolidated requirements file combining all dependencies
 - June 20, 2025. Project cleanup for GitHub deployment - removed unnecessary files, cleared uploaded files, created .gitignore, finalized requirements.txt
+- June 20, 2025. Enhanced portal functionality - fixed delete functionality with proper file and database cleanup, improved upload form with auto-fill from URL parameters, added loading states and toast notifications for better user experience
 
 ## User Preferences
 
