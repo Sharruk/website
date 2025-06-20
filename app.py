@@ -245,6 +245,14 @@ def category_view(course_type_id, dept_id, semester_id, category):
                          category=category,
                          files=filtered_files)
 
+@app.route('/search')
+def search():
+    """Search page for all files"""
+    data = load_data()
+    all_files = data.get('files', [])
+    
+    return render_template('search.html', all_files=all_files)
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     """Upload new files"""

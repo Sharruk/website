@@ -35,9 +35,14 @@
                 <i class="fas fa-file-alt text-primary me-3"></i>
                 {{ category }} Files
             </h1>
-            <a href="{{ url_for('upload') }}?course_type={{ course_type_id }}&department={{ dept_id }}&semester={{ semester_id }}&category={{ category }}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Upload Files
-            </a>
+            <div class="btn-group">
+                <a href="{{ url_for('upload') }}?course_type={{ course_type_id }}&department={{ dept_id }}&semester={{ semester_id }}&category={{ category }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Upload Files
+                </a>
+                <a href="{{ url_for('search') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-search me-2"></i>Search All Files
+                </a>
+            </div>
         </div>
     </div>
 </div>

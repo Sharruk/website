@@ -322,21 +322,6 @@
       }
     }
   },
-  "files": [
-    {
-      "id": 1,
-      "filename": "Development_of_scientific_tamil1.docx",
-      "original_filename": "Development of scientific tamil1.docx",
-      "custom_filename": "Development_of_scientific_tamil1.docx",
-      "course_type": "pg",
-      "department": "mtech_cse",
-      "semester": "2",
-      "category": "CAT",
-      "subject": "tamil and technology",
-      "size": "58.0 KB",
-      "upload_date": "2025-06-20 09:31:15",
-      "file_path": "uploads/Development_of_scientific_tamil1.docx"
-    }
-  ],
+  "files": [],
   "syllabus_files": []
 }
