@@ -1,0 +1,467 @@
+<!-- Global Search Component -->
+<div class="card shadow-sm mb-4" id="globalSearchCard">
+    <div class="card-body">
+        <!-- Basic Search Bar -->
+        <div class="mb-3">
+            <label for="globalBasicSearch" class="form-label">
+                <i class="fas fa-search me-2"></i>Search by Subject Name or Code
+            </label>
+            <div class="input-group input-group-lg">
+                <input type="text" class="form-control" id="globalBasicSearch" 
+                       placeholder="Type to search for subjects, codes, or filenames...">
+                <button class="btn btn-outline-secondary" type="button" id="globalSearchBtn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Smart Search Toggle -->
+        <div class="d-flex align-items-center mb-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="globalSmartToggle">
+                <label class="form-check-label fw-bold" for="globalSmartToggle">
+                    <i class="fas fa-filter me-2"></i>Enable Smart Search (Advanced Filters)
+                </label>
+            </div>
+        </div>
+
+        <!-- Advanced Filters (Hidden by default) -->
+        <div id="globalAdvancedFilters" class="border-top pt-3" style="display: none;">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label for="globalFilterCourseType" class="form-label">Course Type</label>
+                    <select class="form-select" id="globalFilterCourseType">
+                        <option value="">All</option>
+                        <option value="UG">UG</option>
+                        <option value="PG">PG</option>
+                        <option value="MBA">MBA</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="globalFilterDepartment" class="form-label">Department</label>
+                    <select class="form-select" id="globalFilterDepartment">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="globalFilterSemester" class="form-label">Semester</label>
+                    <select class="form-select" id="globalFilterSemester">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="globalFilterCategory" class="form-label">Category</label>
+                    <select class="form-select" id="globalFilterCategory">
+                        <option value="">All Categories</option>
+                        <option value="CAT">CAT</option>
+                        <option value="ESE">ESE</option>
+                        <option value="SAT">SAT</option>
+                        <option value="Practical">Practical</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="globalFilterFileType" class="form-label">File Type</label>
+                    <select class="form-select" id="globalFilterFileType">
+                        <option value="">All Types</option>
+                        <option value="QP">Question Papers</option>
+                        <option value="Syllabus">Syllabus</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="globalClearFilters">
+                        <i class="fas fa-undo me-2"></i>Clear All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results Section -->
+<div id="globalSearchResults" style="display: none;">
+    <!-- Results Counter -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="fas fa-search-plus me-2"></i>Search Results
+            <span class="badge bg-primary ms-2" id="globalResultsCount">0</span>
+        </h5>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="globalCloseResults">
+            <i class="fas fa-times me-1"></i>Close Results
+        </button>
+    </div>
+
+    <!-- Results List -->
+    <div class="row" id="globalResultsList">
+        <!-- Results will be populated here -->
+    </div>
+
+    <!-- No Results Message -->
+    <div id="globalNoResults" class="text-center py-4" style="display: none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No Results Found</h5>
+        <p class="text-muted">Try adjusting your search terms or filters.</p>
+    </div>
+</div>
+
+<script>
+// Global search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGlobalSearch();
+});
+
+function initializeGlobalSearch() {
+    const basicSearch = document.getElementById('globalBasicSearch');
+    const smartToggle = document.getElementById('globalSmartToggle');
+    const advancedFilters = document.getElementById('globalAdvancedFilters');
+    const searchBtn = document.getElementById('globalSearchBtn');
+    const closeResultsBtn = document.getElementById('globalCloseResults');
+    const clearFiltersBtn = document.getElementById('globalClearFilters');
+    
+    if (!basicSearch) return; // Component not loaded
+    
+    // Basic search functionality
+    basicSearch.addEventListener('input', debounceGlobalSearch(performGlobalSearch, 300));
+    basicSearch.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performGlobalSearch();
+        }
+    });
+    
+    // Search button click
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performGlobalSearch);
+    }
+    
+    // Smart search toggle
+    if (smartToggle) {
+        smartToggle.addEventListener('change', function() {
+            if (this.checked) {
+                advancedFilters.style.display = 'block';
+                populateGlobalFilterDropdowns();
+            } else {
+                advancedFilters.style.display = 'none';
+                clearGlobalAdvancedFilters();
+            }
+        });
+    }
+    
+    // Advanced filter changes
+    ['globalFilterCourseType', 'globalFilterDepartment', 'globalFilterSemester', 'globalFilterCategory', 'globalFilterFileType'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', performGlobalSearch);
+        }
+    });
+    
+    // Course type change updates department and semester
+    const courseTypeFilter = document.getElementById('globalFilterCourseType');
+    if (courseTypeFilter) {
+        courseTypeFilter.addEventListener('change', function() {
+            updateGlobalDepartmentFilter(this.value);
+            updateGlobalSemesterFilter(this.value);
+        });
+    }
+    
+    // Clear filters button
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearAllGlobalFilters);
+    }
+    
+    // Close results button
+    if (closeResultsBtn) {
+        closeResultsBtn.addEventListener('click', function() {
+            document.getElementById('globalSearchResults').style.display = 'none';
+        });
+    }
+}
+
+function performGlobalSearch() {
+    const basicSearchTerm = document.getElementById('globalBasicSearch').value.trim();
+    const smartSearchEnabled = document.getElementById('globalSmartToggle').checked;
+    
+    // Don't search if search term is too short and no smart filters
+    if (!basicSearchTerm && !smartSearchEnabled) {
+        document.getElementById('globalSearchResults').style.display = 'none';
+        return;
+    }
+    
+    if (basicSearchTerm.length < 2 && !smartSearchEnabled) {
+        return;
+    }
+    
+    let filters = {};
+    if (smartSearchEnabled) {
+        filters = {
+            courseType: document.getElementById('globalFilterCourseType').value,
+            department: document.getElementById('globalFilterDepartment').value,
+            semester: document.getElementById('globalFilterSemester').value,
+            category: document.getElementById('globalFilterCategory').value,
+            fileType: document.getElementById('globalFilterFileType').value
+        };
+    }
+    
+    // Build search query
+    const searchParams = new URLSearchParams();
+    if (basicSearchTerm) {
+        searchParams.append('q', basicSearchTerm);
+    }
+    if (filters.courseType) searchParams.append('course_type', filters.courseType);
+    if (filters.department) searchParams.append('department', filters.department);
+    if (filters.semester) searchParams.append('semester', filters.semester);
+    if (filters.category) searchParams.append('category', filters.category);
+    if (filters.fileType) searchParams.append('file_type', filters.fileType);
+    
+    // Show loading state
+    showGlobalSearchLoading();
+    
+    // Perform search
+    fetch(`/api/search?${searchParams.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            displayGlobalSearchResults(data.results || []);
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            displayGlobalSearchResults([]);
+        });
+}
+
+function showGlobalSearchLoading() {
+    const resultsSection = document.getElementById('globalSearchResults');
+    const resultsList = document.getElementById('globalResultsList');
+    
+    resultsSection.style.display = 'block';
+    resultsList.innerHTML = `
+        <div class="col-12 text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Searching...</span>
+            </div>
+            <p class="mt-2 text-muted">Searching...</p>
+        </div>
+    `;
+}
+
+function displayGlobalSearchResults(results) {
+    const resultsSection = document.getElementById('globalSearchResults');
+    const resultsList = document.getElementById('globalResultsList');
+    const resultsCount = document.getElementById('globalResultsCount');
+    const noResults = document.getElementById('globalNoResults');
+    
+    resultsSection.style.display = 'block';
+    resultsCount.textContent = results.length;
+    
+    if (results.length === 0) {
+        resultsList.style.display = 'none';
+        noResults.style.display = 'block';
+        return;
+    }
+    
+    resultsList.style.display = 'block';
+    noResults.style.display = 'none';
+    
+    resultsList.innerHTML = results.map(result => `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-2">
+                        <i class="fas fa-${result.file_type === 'Syllabus' ? 'book' : 'file-pdf'} text-${result.file_type === 'Syllabus' ? 'success' : 'danger'} fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">${result.subject_name || result.custom_filename}</h6>
+                            ${result.subject_code ? `<p class="card-text small text-primary mb-1"><strong>Code:</strong> ${result.subject_code}</p>` : ''}
+                            <p class="card-text small text-muted mb-1">
+                                <i class="fas fa-tag me-1"></i>${result.file_type}
+                            </p>
+                            <p class="card-text small mb-1">
+                                <span class="badge bg-${result.course_type === 'UG' ? 'primary' : result.course_type === 'PG' ? 'success' : 'warning'} me-1">
+                                    ${result.course_type}
+                                </span>
+                                <span class="badge bg-secondary">${result.category}</span>
+                            </p>
+                            <p class="card-text small text-muted">
+                                <i class="fas fa-sitemap me-1"></i>
+                                ${result.department} → Sem ${result.semester}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/download/${result.id}" class="btn btn-success btn-sm">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                        <a href="/category/${result.course_type}/${result.department}/${result.semester}/${result.category}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-folder-open me-1"></i>View Category
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateGlobalFilterDropdowns() {
+    // This will be populated with actual data from the server
+    const departmentData = {
+        UG: ["CSE", "MECH", "EEE", "ECE", "IT", "CHEM", "CIVIL"],
+        PG: ["M.Tech CSE (5-Year)", "M.E Applied Electronics", "M.E Structural", "M.E PED"],
+        MBA: ["General MBA"]
+    };
+    
+    const semesterData = {
+        UG: ["1", "2", "3", "4", "5", "6", "7", "8"],
+        PG: ["1", "2", "3", "4"],
+        MBA: ["1", "2", "3", "4"]
+    };
+    
+    // Populate department filter
+    const departmentFilter = document.getElementById('globalFilterDepartment');
+    if (departmentFilter) {
+        const allDepartments = [...departmentData.UG, ...departmentData.PG, ...departmentData.MBA];
+        departmentFilter.innerHTML = '<option value="">All Departments</option>';
+        [...new Set(allDepartments)].forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+    }
+    
+    // Populate semester filter
+    const semesterFilter = document.getElementById('globalFilterSemester');
+    if (semesterFilter) {
+        const allSemesters = [...semesterData.UG, ...semesterData.PG, ...semesterData.MBA];
+        semesterFilter.innerHTML = '<option value="">All</option>';
+        [...new Set(allSemesters)].forEach(sem => {
+            const option = document.createElement('option');
+            option.value = sem;
+            option.textContent = sem;
+            semesterFilter.appendChild(option);
+        });
+    }
+}
+
+function updateGlobalDepartmentFilter(courseType) {
+    const departmentFilter = document.getElementById('globalFilterDepartment');
+    if (!departmentFilter) return;
+    
+    const departmentData = {
+        UG: ["CSE", "MECH", "EEE", "ECE", "IT", "CHEM", "CIVIL"],
+        PG: ["M.Tech CSE (5-Year)", "M.E Applied Electronics", "M.E Structural", "M.E PED"],
+        MBA: ["General MBA"]
+    };
+    
+    const currentValue = departmentFilter.value;
+    departmentFilter.innerHTML = '<option value="">All Departments</option>';
+    
+    if (courseType && departmentData[courseType]) {
+        departmentData[courseType].forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+    } else {
+        const allDepartments = [...departmentData.UG, ...departmentData.PG, ...departmentData.MBA];
+        [...new Set(allDepartments)].forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentFilter.appendChild(option);
+        });
+    }
+    
+    if (currentValue && [...departmentFilter.options].some(opt => opt.value === currentValue)) {
+        departmentFilter.value = currentValue;
+    }
+}
+
+function updateGlobalSemesterFilter(courseType) {
+    const semesterFilter = document.getElementById('globalFilterSemester');
+    if (!semesterFilter) return;
+    
+    const semesterData = {
+        UG: ["1", "2", "3", "4", "5", "6", "7", "8"],
+        PG: ["1", "2", "3", "4"],
+        MBA: ["1", "2", "3", "4"]
+    };
+    
+    const currentValue = semesterFilter.value;
+    semesterFilter.innerHTML = '<option value="">All</option>';
+    
+    if (courseType && semesterData[courseType]) {
+        semesterData[courseType].forEach(sem => {
+            const option = document.createElement('option');
+            option.value = sem;
+            option.textContent = sem;
+            semesterFilter.appendChild(option);
+        });
+    } else {
+        const allSemesters = [...semesterData.UG, ...semesterData.PG, ...semesterData.MBA];
+        [...new Set(allSemesters)].forEach(sem => {
+            const option = document.createElement('option');
+            option.value = sem;
+            option.textContent = sem;
+            semesterFilter.appendChild(option);
+        });
+    }
+    
+    if (currentValue && [...semesterFilter.options].some(opt => opt.value === currentValue)) {
+        semesterFilter.value = currentValue;
+    }
+}
+
+function clearGlobalAdvancedFilters() {
+    ['globalFilterCourseType', 'globalFilterDepartment', 'globalFilterSemester', 'globalFilterCategory', 'globalFilterFileType'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.value = '';
+        }
+    });
+}
+
+function clearAllGlobalFilters() {
+    document.getElementById('globalBasicSearch').value = '';
+    document.getElementById('globalSmartToggle').checked = false;
+    document.getElementById('globalAdvancedFilters').style.display = 'none';
+    clearGlobalAdvancedFilters();
+    document.getElementById('globalSearchResults').style.display = 'none';
+}
+
+function debounceGlobalSearch(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+
+<style>
+#globalSearchCard {
+    border-left: 4px solid #0d6efd;
+}
+
+#globalSearchResults .card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+#globalSearchResults .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+@media (max-width: 768px) {
+    #globalAdvancedFilters .row > div {
+        margin-bottom: 1rem;
+    }
+}
+</style>

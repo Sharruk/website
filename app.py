@@ -2,9 +2,11 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, Subject, File, User
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,6 +15,13 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///college_portal.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database
+db.init_app(app)
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -244,6 +253,76 @@ def category_view(course_type_id, dept_id, semester_id, category):
                          semester_id=semester_id,
                          category=category,
                          files=filtered_files)
+
+@app.route('/api/search')
+def api_search():
+    """API endpoint for global search"""
+    try:
+        # Get search parameters
+        query = request.args.get('q', '').strip()
+        course_type = request.args.get('course_type', '').strip()
+        department = request.args.get('department', '').strip()
+        semester = request.args.get('semester', '').strip()
+        category = request.args.get('category', '').strip()
+        file_type = request.args.get('file_type', '').strip()
+        
+        # For now, use JSON data until database is fully migrated
+        data = load_data()
+        all_files = data.get('files', [])
+        
+        # Apply filters
+        filtered_files = []
+        for file in all_files:
+            # Text search
+            if query:
+                subject_name = (file.get('subject') or '').lower()
+                filename = (file.get('custom_filename') or '').lower()
+                if query.lower() not in subject_name and query.lower() not in filename:
+                    continue
+            
+            # Course type filter
+            if course_type and file.get('course_type', '').upper() != course_type.upper():
+                continue
+                
+            # Department filter
+            if department and file.get('department', '').lower() != department.lower():
+                continue
+                
+            # Semester filter
+            if semester and str(file.get('semester', '')) != semester:
+                continue
+                
+            # Category filter
+            if category and file.get('category', '').upper() != category.upper():
+                continue
+                
+            # File type filter (assume QP for now)
+            if file_type and file_type != 'QP':
+                continue
+            
+            # Add file type for display
+            file['file_type'] = 'QP'
+            file['subject_code'] = None  # Will be populated when subjects are linked
+            
+            filtered_files.append(file)
+        
+        # Limit results for performance
+        results = filtered_files[:50]
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Search API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'results': [],
+            'count': 0
+        }), 500
 
 @app.route('/search')
 def search():
