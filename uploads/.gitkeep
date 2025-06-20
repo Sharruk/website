@@ -1,2 +1,1 @@
-# This file ensures the uploads directory is tracked by git
-# and exists when the application starts
+# Keep this directory in git but ignore uploaded files
