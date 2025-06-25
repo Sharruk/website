@@ -48,21 +48,42 @@
                     <div class="file-preview mb-4">
                         {% set file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else '' %}
                         {% if file_ext == 'pdf' %}
-                        <div class="embed-responsive embed-responsive-16by9">
-                            <iframe src="{{ url_for('static', filename='uploads/' + file.filename) }}" 
-                                    class="embed-responsive-item border rounded" 
-                                    style="width: 100%; height: 500px;">
+                        <div class="text-center">
+                            <iframe src="/uploads/{{ file.filename }}" 
+                                    class="border rounded" 
+                                    style="width: 100%; height: 600px;">
                                 <p>Your browser does not support PDFs. 
                                    <a href="{{ url_for('download', file_id=file.id) if file_type == 'QP' else url_for('download_syllabus', file_id=file.id) }}">Download the PDF</a>.</p>
                             </iframe>
+                            <p class="text-muted mt-2 small">PDF Preview - Use browser controls to navigate</p>
                         </div>
-                        {% elif file_ext in ['jpg', 'jpeg', 'png', 'gif'] %}
+                        {% elif file_ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
                         <div class="text-center">
-                            <img src="{{ url_for('static', filename='uploads/' + file.filename) }}" 
+                            <img src="/uploads/{{ file.filename }}" 
                                  class="img-fluid rounded shadow" 
                                  alt="{{ file.custom_filename }}"
                                  style="max-height: 500px;">
+                            <p class="text-muted mt-2 small">Image Preview</p>
                         </div>
+                        {% elif file_ext in ['txt', 'md', 'json', 'csv'] %}
+                        <div class="text-start">
+                            <div id="text-preview" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                                <p class="text-muted">Loading text preview...</p>
+                            </div>
+                            <p class="text-muted mt-2 small text-center">Text File Preview</p>
+                        </div>
+                        <script>
+                            fetch('/uploads/{{ file.filename }}')
+                                .then(response => response.text())
+                                .then(text => {
+                                    const preview = document.getElementById('text-preview');
+                                    const truncated = text.length > 2000 ? text.substring(0, 2000) + '\n\n[File truncated for preview]' : text;
+                                    preview.innerHTML = '<pre style="white-space: pre-wrap; margin: 0;">' + truncated + '</pre>';
+                                })
+                                .catch(() => {
+                                    document.getElementById('text-preview').innerHTML = '<p class="text-danger">Could not load preview</p>';
+                                });
+                        </script>
                         {% else %}
                         <div class="text-center p-5 bg-light rounded">
                             <i class="fas fa-file fa-3x text-muted mb-3"></i>
@@ -158,11 +179,11 @@
                 <div class="card-body">
                     <!-- Like/Dislike Buttons -->
                     <div class="d-flex justify-content-around mb-3">
-                        <button class="btn btn-outline-success" onclick="voteFile({{ file.id }}, 'like')">
+                        <button class="btn btn-outline-success" onclick="voteFile({{ file.id }}, 'like', '{{ file_type }}')">
                             <i class="fas fa-thumbs-up me-1"></i>
                             <span id="likes-count">{{ file.likes or 0 }}</span>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="voteFile({{ file.id }}, 'dislike')">
+                        <button class="btn btn-outline-danger" onclick="voteFile({{ file.id }}, 'dislike', '{{ file_type }}')">
                             <i class="fas fa-thumbs-down me-1"></i>
                             <span id="dislikes-count">{{ file.dislikes or 0 }}</span>
                         </button>
@@ -180,14 +201,14 @@
                         
                         <div id="comments-container" style="display: none;">
                             <!-- Add Comment Form -->
-                            <form onsubmit="addComment(event)" class="mb-3">
+                            <form onsubmit="addComment(event, {{ file.id }}, '{{ file_type }}')" class="mb-3">
                                 <div class="mb-2">
                                     <input type="text" class="form-control form-control-sm" 
-                                           id="comment-name" placeholder="Your name" required>
+                                           id="comment-name-{{ file.id }}" placeholder="Your name" required>
                                 </div>
                                 <div class="mb-2">
                                     <textarea class="form-control form-control-sm" 
-                                              id="comment-text" rows="2" 
+                                              id="comment-text-{{ file.id }}" rows="2" 
                                               placeholder="Add a comment..." required></textarea>
                                 </div>
                                 <button type="submit" class="btn btn-sm btn-primary">
@@ -196,13 +217,13 @@
                             </form>
 
                             <!-- Comments List -->
-                            <div id="comments-list">
+                            <div id="comments-list-{{ file.id }}">
                                 {% if file.comments %}
                                 {% for comment in file.comments %}
                                 <div class="comment mb-2 p-2 bg-light rounded">
                                     <strong class="small">{{ comment.name }}</strong>
-                                    <span class="small text-muted">{{ comment.timestamp }}</span>
-                                    <p class="small mb-0 mt-1">{{ comment.text }}</p>
+                                    <span class="small text-muted">{{ comment.date if comment.date else comment.timestamp }}</span>
+                                    <p class="small mb-0 mt-1">{{ comment.comment if comment.comment else comment.text }}</p>
                                 </div>
                                 {% endfor %}
                                 {% else %}
@@ -256,8 +277,10 @@ function toggleComments() {
 }
 
 // Vote functionality
-function voteFile(fileId, voteType) {
-    fetch(`/vote/${fileId}`, {
+function voteFile(fileId, voteType, fileType) {
+    const endpoint = fileType === 'Syllabus' ? `/vote_syllabus/${fileId}` : `/vote/${fileId}`;
+    
+    fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -280,24 +303,24 @@ function voteFile(fileId, voteType) {
 }
 
 // Add comment functionality
-function addComment(event) {
+function addComment(event, fileId, fileType) {
     event.preventDefault();
     
-    const name = document.getElementById('comment-name').value;
-    const text = document.getElementById('comment-text').value;
+    const name = document.getElementById(`comment-name-${fileId}`).value;
+    const text = document.getElementById(`comment-text-${fileId}`).value;
     
-    fetch(`/comment/{{ file.id }}`, {
+    fetch(`/comment/${fileId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: name, text: text })
+        body: JSON.stringify({ name: name, comment: text, file_type: fileType })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             // Add comment to the list
-            const commentsList = document.getElementById('comments-list');
+            const commentsList = document.getElementById(`comments-list-${fileId}`);
             const newComment = document.createElement('div');
             newComment.className = 'comment mb-2 p-2 bg-light rounded';
             newComment.innerHTML = `
@@ -305,11 +328,16 @@ function addComment(event) {
                 <span class="small text-muted">${new Date().toLocaleString()}</span>
                 <p class="small mb-0 mt-1">${text}</p>
             `;
+            
+            // Check if there are existing comments
+            if (commentsList.innerHTML.includes('No comments yet')) {
+                commentsList.innerHTML = '';
+            }
             commentsList.insertBefore(newComment, commentsList.firstChild);
             
             // Clear form
-            document.getElementById('comment-name').value = '';
-            document.getElementById('comment-text').value = '';
+            document.getElementById(`comment-name-${fileId}`).value = '';
+            document.getElementById(`comment-text-${fileId}`).value = '';
             
             showToast('Comment added!');
         } else {
