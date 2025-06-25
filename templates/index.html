@@ -34,17 +34,17 @@
 
 <div class="row g-4 justify-content-center">
     <!-- Question Papers Section -->
-    <div class="col-lg-5 col-md-6">
+    <div class="col-lg-4 col-md-6">
         <div class="card h-100 shadow-lg hover-card border-0">
-            <div class="card-body text-center p-5">
-                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
-                    <i class="fas fa-file-alt fa-3x text-primary"></i>
+            <div class="card-body text-center p-4">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-file-alt fa-2x text-primary"></i>
                 </div>
-                <h3 class="card-title mb-3 text-primary">Question Papers</h3>
+                <h4 class="card-title mb-3 text-primary">Question Papers</h4>
                 <p class="card-text text-muted mb-4">
                     Access previous year question papers, CAT, ESE, and practical materials organized by department and semester.
                 </p>
-                <a href="{{ url_for('materials_home') }}" class="btn btn-primary btn-lg w-100">
+                <a href="{{ url_for('materials_home') }}" class="btn btn-primary w-100">
                     <i class="fas fa-arrow-right me-2"></i>
                     Browse Question Papers
                 </a>
@@ -53,19 +53,38 @@
     </div>
 
     <!-- Syllabus Section -->
-    <div class="col-lg-5 col-md-6">
+    <div class="col-lg-4 col-md-6">
         <div class="card h-100 shadow-lg hover-card border-0">
-            <div class="card-body text-center p-5">
-                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
-                    <i class="fas fa-book fa-3x text-success"></i>
+            <div class="card-body text-center p-4">
+                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-book fa-2x text-success"></i>
                 </div>
-                <h3 class="card-title mb-3 text-success">Syllabus</h3>
+                <h4 class="card-title mb-3 text-success">Syllabus</h4>
                 <p class="card-text text-muted mb-4">
                     Download complete syllabus documents for all regulations and departments across different course types.
                 </p>
-                <a href="{{ url_for('syllabus_home') }}" class="btn btn-success btn-lg w-100">
+                <a href="{{ url_for('syllabus_home') }}" class="btn btn-success w-100">
                     <i class="fas fa-arrow-right me-2"></i>
                     Browse Syllabus
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Clubs Section -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-lg hover-card border-0">
+            <div class="card-body text-center p-4">
+                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-users fa-2x text-warning"></i>
+                </div>
+                <h4 class="card-title mb-3 text-warning">Student Clubs</h4>
+                <p class="card-text text-muted mb-4">
+                    Discover and connect with student organizations on campus. Find clubs that match your interests and activities.
+                </p>
+                <a href="{{ url_for('clubs') }}" class="btn btn-warning w-100">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    View Student Clubs
                 </a>
             </div>
         </div>

@@ -55,6 +55,27 @@ def save_community_data(data):
     except Exception as e:
         app.logger.error(f"Error saving community data: {str(e)}")
 
+def load_clubs_data():
+    """Load clubs data from JSON file"""
+    try:
+        if os.path.exists('clubs.json'):
+            with open('clubs.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"clubs": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading clubs data: {str(e)}")
+        return {"clubs": [], "next_id": 1}
+
+def save_clubs_data(data):
+    """Save clubs data to JSON file"""
+    try:
+        with open('clubs.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving clubs data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -1278,6 +1299,151 @@ def add_discussion_reply():
         
     except Exception as e:
         app.logger.error(f"Error adding reply: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/clubs')
+def clubs():
+    """Student Clubs page"""
+    clubs_data = load_clubs_data()
+    return render_template('clubs.html', clubs=clubs_data.get('clubs', []))
+
+@app.route('/clubs/add')
+def add_club():
+    """Add new club page (admin only)"""
+    # Simple admin check via URL parameter
+    if request.args.get('admin') != 'true':
+        flash('Admin access required to add clubs.', 'error')
+        return redirect(url_for('clubs'))
+    
+    return render_template('add_club.html')
+
+@app.route('/clubs/add', methods=['POST'])
+def add_club_post():
+    """Handle club addition"""
+    try:
+        # Simple admin check
+        if request.args.get('admin') != 'true':
+            flash('Admin access required to add clubs.', 'error')
+            return redirect(url_for('clubs'))
+        
+        club_name = request.form.get('club_name', '').strip()
+        description = request.form.get('description', '').strip()
+        instagram_link = request.form.get('instagram_link', '').strip()
+        
+        if not club_name:
+            flash('Club name is required.', 'error')
+            return redirect(url_for('add_club') + '?admin=true')
+        
+        # Handle file upload
+        screenshot_filename = None
+        if 'instagram_screenshot' in request.files:
+            file = request.files['instagram_screenshot']
+            if file and file.filename:
+                # Create clubs upload directory
+                clubs_upload_dir = os.path.join(UPLOAD_FOLDER, 'clubs')
+                os.makedirs(clubs_upload_dir, exist_ok=True)
+                
+                # Secure filename and save
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+                screenshot_filename = timestamp + filename
+                file_path = os.path.join(clubs_upload_dir, screenshot_filename)
+                file.save(file_path)
+        
+        # Load existing clubs data
+        clubs_data = load_clubs_data()
+        
+        # Create new club entry
+        new_club = {
+            'id': clubs_data.get('next_id', 1),
+            'name': club_name,
+            'description': description if description else None,
+            'instagram_link': instagram_link if instagram_link else None,
+            'instagram_screenshot': screenshot_filename,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Add to clubs list and update next_id
+        clubs_data['clubs'].append(new_club)
+        clubs_data['next_id'] = clubs_data.get('next_id', 1) + 1
+        
+        # Save to file
+        save_clubs_data(clubs_data)
+        
+        flash(f'Club "{club_name}" added successfully!', 'success')
+        return redirect(url_for('clubs'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding club: {str(e)}")
+        flash(f'Error adding club: {str(e)}', 'error')
+        return redirect(url_for('add_club') + '?admin=true')
+
+@app.route('/clubs/screenshot/<filename>')
+def club_screenshot(filename):
+    """Serve club screenshots securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        clubs_dir = os.path.join(UPLOAD_FOLDER, 'clubs')
+        file_path = os.path.join(clubs_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Club screenshot not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within clubs directory
+        if not file_path.startswith(os.path.abspath(clubs_dir)):
+            app.logger.warning(f"File path outside clubs directory: {file_path}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(clubs_dir, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving club screenshot {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
+
+@app.route('/admin/clubs/delete/<int:club_id>', methods=['POST'])
+def delete_club(club_id):
+    """Delete a club (admin only)"""
+    try:
+        # Simple admin check
+        if request.args.get('admin') != 'true':
+            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+        
+        clubs_data = load_clubs_data()
+        clubs = clubs_data.get('clubs', [])
+        
+        # Find and remove the club
+        club_found = False
+        club_to_delete = None
+        for i, club in enumerate(clubs):
+            if club['id'] == club_id:
+                club_to_delete = clubs.pop(i)
+                club_found = True
+                break
+        
+        if not club_found:
+            return jsonify({'success': False, 'error': 'Club not found'}), 404
+        
+        # Delete screenshot file if exists
+        if club_to_delete and club_to_delete.get('instagram_screenshot'):
+            screenshot_path = os.path.join(UPLOAD_FOLDER, 'clubs', club_to_delete['instagram_screenshot'])
+            if os.path.exists(screenshot_path):
+                try:
+                    os.remove(screenshot_path)
+                except Exception as e:
+                    app.logger.warning(f"Could not delete screenshot file: {str(e)}")
+        
+        # Save updated data
+        save_clubs_data(clubs_data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting club: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
