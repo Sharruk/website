@@ -524,6 +524,14 @@ def file_detail(file_id):
             flash('File not found.', 'error')
             return redirect(url_for('index'))
         
+        # Check if the physical file exists
+        if 'filename' in file_found:
+            file_path = os.path.join(UPLOAD_FOLDER, file_found['filename'])
+            if not os.path.exists(file_path):
+                app.logger.warning(f"Database has file {file_found['filename']} but physical file missing")
+                flash('File has been deleted or moved. Please contact administrator.', 'error')
+                return redirect(url_for('index'))
+        
         # Ensure social fields exist
         if 'likes' not in file_found:
             file_found['likes'] = 0
@@ -1154,17 +1162,31 @@ def uploaded_file(filename):
     try:
         # Security check: ensure filename doesn't contain path traversal
         if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
             return "Invalid file path", 400
         
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        # Construct absolute path
+        file_path = os.path.join(os.path.abspath(UPLOAD_FOLDER), filename)
+        
+        # Check if file exists
         if not os.path.exists(file_path):
             app.logger.error(f"File not found: {file_path}")
+            # List available files for debugging
+            available_files = []
+            if os.path.exists(UPLOAD_FOLDER):
+                available_files = os.listdir(UPLOAD_FOLDER)
+            app.logger.info(f"Available files in uploads: {available_files}")
             return "File not found", 404
+        
+        # Verify file is within uploads directory (additional security)
+        if not file_path.startswith(os.path.abspath(UPLOAD_FOLDER)):
+            app.logger.warning(f"File path outside uploads directory: {file_path}")
+            return "Invalid file path", 400
             
-        return send_from_directory(UPLOAD_FOLDER, filename)
+        return send_from_directory(os.path.abspath(UPLOAD_FOLDER), filename, as_attachment=False)
     except Exception as e:
         app.logger.error(f"Error serving file {filename}: {str(e)}")
-        return "File not found", 404
+        return f"Error serving file: {str(e)}", 500
 
 @app.route('/community')
 def community():

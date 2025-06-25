@@ -119,7 +119,8 @@
                                         style="width: 100%; height: 600px;"
                                         title="Document Preview"
                                         onload="handleOfficeViewerLoad({{ file.id }})"
-                                        onerror="showOfficeFallback({{ file.id }})">
+                                        onerror="showOfficeFallback({{ file.id }})"
+                                        sandbox="allow-same-origin allow-scripts allow-forms">
                                 </iframe>
                                 
                                 <!-- Loading indicator -->
