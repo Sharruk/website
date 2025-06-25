@@ -364,6 +364,48 @@
       "likes": 0,
       "dislikes": 0,
       "comments": []
+    },
+    {
+      "id": 6,
+      "filename": "Statistical_Tables_1.pdf",
+      "original_filename": "Statistical Tables (1).pdf",
+      "custom_filename": "Statistical_Tables_1.pdf",
+      "course_type": "ug",
+      "department": "cse",
+      "semester": "1",
+      "category": "CAT",
+      "subject": "maths",
+      "description": "normal distributio,z,t,f,chi-square test value is in this table",
+      "size": "524.1 KB",
+      "upload_date": "2025-06-25 15:48:53",
+      "file_path": "uploads/Statistical_Tables_1.pdf",
+      "likes": 2,
+      "dislikes": 1,
+      "comments": [
+        {
+          "name": "John Cena",
+          "comment": "this is the admin. Finally file preview is know available Now.",
+          "date": "2025-06-25 15:50"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "original_filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "custom_filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "course_type": "ug",
+      "department": "it",
+      "semester": "1",
+      "category": "CAT",
+      "subject": "Tamil",
+      "description": "scientific tamil ppt exam material",
+      "size": "2.9 MB",
+      "upload_date": "2025-06-25 16:19:00",
+      "file_path": "uploads/Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "likes": 0,
+      "dislikes": 0,
+      "comments": []
     }
   ],
   "syllabus_files": []

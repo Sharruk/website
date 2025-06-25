@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Student Clubs - College Materials & PYQs Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-users me-2"></i>Student Clubs
+                    </h2>
+                    <p class="text-muted mb-0">Discover and connect with student organizations on campus</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('add_club') }}?admin=true" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Add Club
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clubs Grid -->
+    {% if clubs %}
+    <div class="row g-4">
+        {% for club in clubs %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="card h-100 shadow-sm club-card">
+                {% if club.instagram_screenshot %}
+                <div class="club-image-container" style="height: 200px; overflow: hidden;">
+                    <img src="{{ url_for('club_screenshot', filename=club.instagram_screenshot) }}" 
+                         class="card-img-top" 
+                         alt="{{ club.name }} Instagram"
+                         style="width: 100%; height: 100%; object-fit: cover;"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="d-none align-items-center justify-content-center bg-light" style="height: 100%;">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <div class="text-center text-white">
+                        <i class="fas fa-users fa-3x mb-2"></i>
+                        <h6 class="mb-0">{{ club.name[:20] }}{% if club.name|length > 20 %}...{% endif %}</h6>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title text-primary mb-2">{{ club.name }}</h5>
+                    
+                    {% if club.description %}
+                    <p class="card-text text-muted mb-3 flex-grow-1">{{ club.description }}</p>
+                    {% else %}
+                    <p class="card-text text-muted mb-3 flex-grow-1 fst-italic">No description available.</p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        {% if club.instagram_link %}
+                        <a href="{{ club.instagram_link }}" 
+                           target="_blank" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fab fa-instagram me-1"></i>Instagram
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">No Instagram link</span>
+                        {% endif %}
+                        
+                        <!-- Admin delete button (hidden by default, shown with admin parameter) -->
+                        <button class="btn btn-outline-danger btn-sm admin-only" 
+                                style="display: none;"
+                                onclick="deleteClub({{ club.id }}, '{{ club.name }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-top-0">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Added {{ club.created_at[:10] if club.created_at else 'Recently' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-users fa-5x text-muted"></i>
+                </div>
+                <h4 class="text-muted mb-3">No Student Clubs Yet</h4>
+                <p class="text-muted mb-4">Be the first to add a student club to the portal!</p>
+                <a href="{{ url_for('add_club') }}?admin=true" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add First Club
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="notification-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-info-circle text-primary me-2"></i>
+            <strong class="me-auto">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toast-message"></div>
+    </div>
+</div>
+
+<script>
+// Show admin controls if admin parameter is present
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = 'inline-block';
+        });
+    }
+});
+
+// Delete club function
+function deleteClub(clubId, clubName) {
+    if (confirm(`Are you sure you want to delete "${clubName}"? This action cannot be undone.`)) {
+        fetch(`/admin/clubs/delete/${clubId}?admin=true`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Club "${clubName}" deleted successfully.`);
+                // Reload page after short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(`Error: ${data.error}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while deleting the club.', 'error');
+        });
+    }
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    const toastElement = document.getElementById('notification-toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    toastMessage.textContent = message;
+    
+    // Change toast color based on type
+    if (type === 'error') {
+        toastElement.className = 'toast bg-danger text-white';
+    } else {
+        toastElement.className = 'toast';
+    }
+    
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+}
+
+// Card hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const clubCards = document.querySelectorAll('.club-card');
+    clubCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+
+<style>
+.club-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.club-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.club-image-container img {
+    transition: transform 0.3s ease;
+}
+
+.club-card:hover .club-image-container img {
+    transform: scale(1.05);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+</style>
+{% endblock %}
