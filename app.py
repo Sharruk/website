@@ -476,6 +476,51 @@ def vote_syllabus_file(file_id):
         app.logger.error(f"Vote error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/file/<int:file_id>')
+def file_detail(file_id):
+    """Display detailed view of a file"""
+    try:
+        data = load_data()
+        
+        # Search in regular files first
+        file_found = None
+        file_type = 'QP'
+        
+        for file in data.get('files', []):
+            if file['id'] == file_id:
+                file_found = file
+                file_type = 'QP'
+                break
+        
+        # Search in syllabus files if not found
+        if not file_found:
+            for file in data.get('syllabus_files', []):
+                if file['id'] == file_id:
+                    file_found = file
+                    file_type = 'Syllabus'
+                    break
+        
+        if not file_found:
+            flash('File not found.', 'error')
+            return redirect(url_for('index'))
+        
+        # Ensure social fields exist
+        if 'likes' not in file_found:
+            file_found['likes'] = 0
+        if 'dislikes' not in file_found:
+            file_found['dislikes'] = 0
+        if 'comments' not in file_found:
+            file_found['comments'] = []
+        
+        return render_template('file_detail.html', 
+                             file=file_found, 
+                             file_type=file_type)
+        
+    except Exception as e:
+        app.logger.error(f"File detail error: {str(e)}")
+        flash('Error loading file details.', 'error')
+        return redirect(url_for('index'))
+
 def highlight_search_terms(file, query):
     """Add highlighting to search terms in file data"""
     highlighted_file = file.copy()
@@ -519,6 +564,7 @@ def upload():
             semester = request.form.get('semester')
             category = request.form.get('category')
             subject = request.form.get('subject')
+            description = request.form.get('description', '').strip()
             custom_filename = request.form.get('filename')
             
             # Check if file was uploaded
@@ -953,17 +999,27 @@ def upload_syllabus(course_type, dept_id, regulation):
                 new_id = max_id + 1
                 
                 # Add to data
+                # Get form data for syllabus
+                custom_filename = request.form.get('custom_filename', '').strip()
+                description = request.form.get('description', '').strip()
+                
                 file_info = {
                     'id': new_id,
                     'filename': unique_filename,
                     'original_filename': original_filename,
+                    'custom_filename': custom_filename or original_filename,
                     'file_size': file_size,
                     'file_extension': file_extension,
                     'course_type': course_type,
                     'department': dept_id,
                     'regulation': regulation,
+                    'description': description,
+                    'size': f"{file_size / (1024*1024):.1f} MB" if file_size > 1024*1024 else f"{file_size / 1024:.1f} KB",
                     'upload_date': datetime.now().isoformat(),
-                    'file_path': filepath
+                    'file_path': filepath,
+                    'likes': 0,
+                    'dislikes': 0,
+                    'comments': []
                 }
                 
                 data['syllabus_files'].append(file_info)
