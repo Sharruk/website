@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory, jsonify, session
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -1148,11 +1148,20 @@ def page_not_found(error):
     """Handle 404 errors"""
     return redirect(url_for('index'))
 
-@app.route('/uploads/<filename>')
+@app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    """Serve uploaded files"""
+    """Serve uploaded files securely"""
     try:
-        return send_file(os.path.join(UPLOAD_FOLDER, filename))
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            return "Invalid file path", 400
+        
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if not os.path.exists(file_path):
+            app.logger.error(f"File not found: {file_path}")
+            return "File not found", 404
+            
+        return send_from_directory(UPLOAD_FOLDER, filename)
     except Exception as e:
         app.logger.error(f"Error serving file {filename}: {str(e)}")
         return "File not found", 404
