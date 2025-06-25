@@ -1395,12 +1395,14 @@ def club_screenshot(filename):
             app.logger.error(f"Club screenshot not found: {file_path}")
             return "File not found", 404
         
-        # Verify file is within clubs directory
-        if not file_path.startswith(os.path.abspath(clubs_dir)):
-            app.logger.warning(f"File path outside clubs directory: {file_path}")
+        # Verify file is within clubs directory (fix path normalization)
+        clubs_dir_abs = os.path.abspath(clubs_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(clubs_dir_abs):
+            app.logger.warning(f"File path outside clubs directory: {file_path_abs}")
             return "Invalid file path", 400
             
-        return send_from_directory(clubs_dir, filename, as_attachment=False)
+        return send_from_directory(clubs_dir_abs, filename, as_attachment=False)
     except Exception as e:
         app.logger.error(f"Error serving club screenshot {filename}: {str(e)}")
         return f"Error serving file: {str(e)}", 500

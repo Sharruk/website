@@ -58,22 +58,38 @@
                     <p class="card-text text-muted mb-3 flex-grow-1 fst-italic">No description available.</p>
                     {% endif %}
                     
+                    {% if club.instagram_link %}
+                    <div class="instagram-section mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <a href="{{ club.instagram_link }}" 
+                               target="_blank" 
+                               class="btn btn-outline-primary btn-sm me-2">
+                                <i class="fab fa-instagram me-1"></i>Instagram
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm" 
+                                    onclick="copyToClipboard('{{ club.instagram_link }}')"
+                                    title="Copy Instagram link">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="instagram-link-text">
+                            <small class="text-muted d-block text-break">{{ club.instagram_link }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <div class="d-flex justify-content-between align-items-center mt-auto">
-                        {% if club.instagram_link %}
-                        <a href="{{ club.instagram_link }}" 
-                           target="_blank" 
-                           class="btn btn-outline-primary btn-sm">
-                            <i class="fab fa-instagram me-1"></i>Instagram
-                        </a>
-                        {% else %}
+                        {% if not club.instagram_link %}
                         <span class="text-muted small">No Instagram link</span>
+                        {% else %}
+                        <span></span>
                         {% endif %}
                         
-                        <!-- Admin delete button (hidden by default, shown with admin parameter) -->
+                        <!-- Admin delete button (visible to admins) -->
                         <button class="btn btn-outline-danger btn-sm admin-only" 
                                 style="display: none;"
                                 onclick="deleteClub({{ club.id }}, '{{ club.name }}')">
-                            <i class="fas fa-trash"></i>
+                            <i class="fas fa-trash me-1"></i>Delete
                         </button>
                     </div>
                 </div>
@@ -120,42 +136,54 @@
 </div>
 
 <script>
-// Show admin controls if admin parameter is present
+// Show admin controls (visible by default for testing/development)
 document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'true') {
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = 'inline-block';
-        });
-    }
+    // Always show admin controls for development/testing
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = 'inline-block';
+    });
 });
 
-// Delete club function
+// Copy to clipboard function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast('Instagram link copied to clipboard!', 'success');
+    }, function(err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Instagram link copied to clipboard!', 'success');
+    });
+}
+
+// Delete club function (no confirmation for quick testing)
 function deleteClub(clubId, clubName) {
-    if (confirm(`Are you sure you want to delete "${clubName}"? This action cannot be undone.`)) {
-        fetch(`/admin/clubs/delete/${clubId}?admin=true`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(`Club "${clubName}" deleted successfully.`);
-                // Reload page after short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                showToast(`Error: ${data.error}`, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while deleting the club.', 'error');
-        });
-    }
+    fetch(`/admin/clubs/delete/${clubId}?admin=true`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Club "${clubName}" deleted successfully.`);
+            // Reload page immediately
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(`Error: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while deleting the club.', 'error');
+    });
 }
 
 // Show toast notification
@@ -211,6 +239,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .bg-gradient-primary {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.instagram-section {
+    border-top: 1px solid #e9ecef;
+    padding-top: 0.75rem;
+}
+
+.instagram-link-text {
+    background-color: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e9ecef;
+}
+
+.instagram-link-text small {
+    font-family: monospace;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    word-break: break-all;
 }
 </style>
 {% endblock %}
