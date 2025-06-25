@@ -340,6 +340,42 @@
       "likes": 0,
       "dislikes": 0,
       "comments": []
+    },
+    {
+      "id": 2,
+      "filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "original_filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "custom_filename": "Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "course_type": "ug",
+      "department": "cse",
+      "semester": "1",
+      "category": "CAT",
+      "subject": "tamil and technology",
+      "description": "",
+      "size": "2.9 MB",
+      "upload_date": "2025-06-25 08:09:44",
+      "file_path": "uploads/Development-of-Scientific-Tamil-and-Tamil-Computing.pptx",
+      "likes": 0,
+      "dislikes": 0,
+      "comments": []
+    },
+    {
+      "id": 3,
+      "filename": "QB_PS_Unit-III.pdf",
+      "original_filename": "QB PS Unit-III.pdf",
+      "custom_filename": "QB_PS_Unit-III.pdf",
+      "course_type": "ug",
+      "department": "it",
+      "semester": "1",
+      "category": "CAT",
+      "subject": "maths",
+      "description": "",
+      "size": "186.7 KB",
+      "upload_date": "2025-06-25 08:11:37",
+      "file_path": "uploads/QB_PS_Unit-III.pdf",
+      "likes": 0,
+      "dislikes": 0,
+      "comments": []
     }
   ],
   "syllabus_files": []

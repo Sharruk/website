@@ -1,305 +1,263 @@
 {% extends "base.html" %}
 
-{% block title %}{{ file.custom_filename }} - College Materials & PYQs Portal{% endblock %}
+{% block title %}{{ file.custom_filename }} - File Details{% endblock %}
 
-{% block breadcrumb %}
-<nav aria-label="breadcrumb" class="bg-light py-2">
-    <div class="container">
-        <ol class="breadcrumb mb-0">
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
-            {% if file_type == 'Syllabus' %}
-            <li class="breadcrumb-item"><a href="{{ url_for('syllabus_home') }}">Syllabus</a></li>
-            {% else %}
+            {% if file_type == 'QP' %}
             <li class="breadcrumb-item"><a href="{{ url_for('materials_home') }}">Question Papers</a></li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{{ url_for('syllabus_home') }}">Syllabus</a></li>
             {% endif %}
             <li class="breadcrumb-item active" aria-current="page">{{ file.custom_filename }}</li>
         </ol>
-    </div>
-</nav>
-{% endblock %}
+    </nav>
 
-{% block content %}
-<div class="row">
-    <div class="col-12">
-        <!-- File Header -->
-        <div class="d-flex justify-content-between align-items-start mb-4">
-            <div>
-                <h1 class="h3 mb-2">{{ file.custom_filename }}</h1>
-                <div class="d-flex flex-wrap gap-2 mb-2">
-                    <span class="badge bg-{{ file_type == 'Syllabus' ? 'success' : 'primary' }} fs-6">{{ file_type }}</span>
-                    {% if file.course_type %}
-                    <span class="badge bg-secondary">{{ file.course_type.upper() }}</span>
-                    {% endif %}
-                    {% if file.category %}
-                    <span class="badge bg-info">{{ file.category }}</span>
-                    {% endif %}
-                    <span class="badge bg-light text-dark">{{ file.size }}</span>
+    <div class="row">
+        <!-- File Preview Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-file-alt text-primary me-2"></i>
+                            {{ file.custom_filename }}
+                        </h4>
+                        <div class="btn-group">
+                            {% if file_type == 'QP' %}
+                            <a href="{{ url_for('download', file_id=file.id) }}" class="btn btn-success">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('download_syllabus', file_id=file.id) }}" class="btn btn-success">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-outline-primary" onclick="shareFile()">
+                                <i class="fas fa-share me-1"></i>Share
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-muted mb-0">
-                    {% if file.subject %}
-                    <i class="fas fa-book me-1"></i>{{ file.subject }}
+                <div class="card-body">
+                    <!-- File Preview -->
+                    <div class="file-preview mb-4">
+                        {% set file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else '' %}
+                        {% if file_ext == 'pdf' %}
+                        <div class="embed-responsive embed-responsive-16by9">
+                            <iframe src="{{ url_for('static', filename='uploads/' + file.filename) }}" 
+                                    class="embed-responsive-item border rounded" 
+                                    style="width: 100%; height: 500px;">
+                                <p>Your browser does not support PDFs. 
+                                   <a href="{{ url_for('download', file_id=file.id) if file_type == 'QP' else url_for('download_syllabus', file_id=file.id) }}">Download the PDF</a>.</p>
+                            </iframe>
+                        </div>
+                        {% elif file_ext in ['jpg', 'jpeg', 'png', 'gif'] %}
+                        <div class="text-center">
+                            <img src="{{ url_for('static', filename='uploads/' + file.filename) }}" 
+                                 class="img-fluid rounded shadow" 
+                                 alt="{{ file.custom_filename }}"
+                                 style="max-height: 500px;">
+                        </div>
+                        {% else %}
+                        <div class="text-center p-5 bg-light rounded">
+                            <i class="fas fa-file fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Preview not available</h5>
+                            <p class="text-muted">This file type cannot be previewed online.</p>
+                            <div class="mt-3">
+                                {% if file_type == 'QP' %}
+                                <a href="{{ url_for('download', file_id=file.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-download me-1"></i>Download to View
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('download_syllabus', file_id=file.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-download me-1"></i>Download to View
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- File Description -->
+                    {% if file.description %}
+                    <div class="file-description">
+                        <h6 class="text-muted mb-2">Description</h6>
+                        <p class="bg-light p-3 rounded">{{ file.description }}</p>
+                    </div>
                     {% endif %}
-                    {% if file.regulation %}
-                    <i class="fas fa-scroll me-2"></i>{{ file.regulation }} Regulation
-                    {% endif %}
-                    <i class="fas fa-calendar ms-2 me-1"></i>{{ file.upload_date }}
-                </p>
+                </div>
             </div>
-            <button onclick="goBack()" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Back
-            </button>
+        </div>
+
+        <!-- File Info & Social Features -->
+        <div class="col-lg-4">
+            <!-- File Information -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">File Information</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>Subject:</strong> 
+                            <span class="text-muted">{{ file.subject if file.subject else 'N/A' }}</span>
+                        </li>
+                        {% if file_type == 'QP' %}
+                        <li class="mb-2">
+                            <strong>Course:</strong> 
+                            <span class="text-muted">{{ file.course_type|upper }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Department:</strong> 
+                            <span class="text-muted">{{ file.department|upper }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Semester:</strong> 
+                            <span class="text-muted">{{ file.semester }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Category:</strong> 
+                            <span class="text-muted">{{ file.category }}</span>
+                        </li>
+                        {% else %}
+                        <li class="mb-2">
+                            <strong>Course:</strong> 
+                            <span class="text-muted">{{ file.course_type|upper }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Department:</strong> 
+                            <span class="text-muted">{{ file.department|upper }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Regulation:</strong> 
+                            <span class="text-muted">{{ file.regulation }}</span>
+                        </li>
+                        {% endif %}
+                        <li class="mb-2">
+                            <strong>File Size:</strong> 
+                            <span class="text-muted">{{ file.size }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Uploaded:</strong> 
+                            <span class="text-muted">{{ file.upload_date }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Social Features -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Community Feedback</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Like/Dislike Buttons -->
+                    <div class="d-flex justify-content-around mb-3">
+                        <button class="btn btn-outline-success" onclick="voteFile({{ file.id }}, 'like')">
+                            <i class="fas fa-thumbs-up me-1"></i>
+                            <span id="likes-count">{{ file.likes or 0 }}</span>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="voteFile({{ file.id }}, 'dislike')">
+                            <i class="fas fa-thumbs-down me-1"></i>
+                            <span id="dislikes-count">{{ file.dislikes or 0 }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="comments-section">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Comments ({{ file.comments|length if file.comments else 0 }})</h6>
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleComments()">
+                                <i class="fas fa-comments me-1"></i>
+                                <span id="comments-toggle">Show</span>
+                            </button>
+                        </div>
+                        
+                        <div id="comments-container" style="display: none;">
+                            <!-- Add Comment Form -->
+                            <form onsubmit="addComment(event)" class="mb-3">
+                                <div class="mb-2">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           id="comment-name" placeholder="Your name" required>
+                                </div>
+                                <div class="mb-2">
+                                    <textarea class="form-control form-control-sm" 
+                                              id="comment-text" rows="2" 
+                                              placeholder="Add a comment..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>Post
+                                </button>
+                            </form>
+
+                            <!-- Comments List -->
+                            <div id="comments-list">
+                                {% if file.comments %}
+                                {% for comment in file.comments %}
+                                <div class="comment mb-2 p-2 bg-light rounded">
+                                    <strong class="small">{{ comment.name }}</strong>
+                                    <span class="small text-muted">{{ comment.timestamp }}</span>
+                                    <p class="small mb-0 mt-1">{{ comment.text }}</p>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted small">No comments yet. Be the first to comment!</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- File Preview Column -->
-    <div class="col-lg-8 mb-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="fas fa-eye me-2"></i>File Preview
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                <div id="filePreview" class="text-center" style="min-height: 400px;">
-                    <!-- Preview will be loaded here -->
-                </div>
-            </div>
+<!-- Toast for notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="notification-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-
-        <!-- Description Section -->
-        {% if file.description %}
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-light">
-                <h6 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>Description
-                </h6>
-            </div>
-            <div class="card-body">
-                <p class="mb-0">{{ file.description }}</p>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Interaction Column -->
-    <div class="col-lg-4">
-        <!-- Actions Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h6 class="mb-0">
-                    <i class="fas fa-tools me-2"></i>Actions
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('download_syllabus' if file_type == 'Syllabus' else 'download', file_id=file.id) }}" 
-                       class="btn btn-success">
-                        <i class="fas fa-download me-2"></i>Download File
-                    </a>
-                    <button class="btn btn-outline-primary" onclick="shareFile('{{ file.id }}', '{{ file.custom_filename }}')">
-                        <i class="fas fa-share me-2"></i>Share File
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Social Interaction Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h6 class="mb-0">
-                    <i class="fas fa-thumbs-up me-2"></i>Your Opinion
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-around mb-3">
-                    <button class="btn btn-outline-success flex-fill me-2" 
-                            onclick="voteFile('{{ file.id }}', 'like', '{{ file_type }}')">
-                        <i class="fas fa-thumbs-up me-1"></i>
-                        <span id="likes-{{ file.id }}">{{ file.likes or 0 }}</span>
-                    </button>
-                    <button class="btn btn-outline-danger flex-fill ms-2" 
-                            onclick="voteFile('{{ file.id }}', 'dislike', '{{ file_type }}')">
-                        <i class="fas fa-thumbs-down me-1"></i>
-                        <span id="dislikes-{{ file.id }}">{{ file.dislikes or 0 }}</span>
-                    </button>
-                </div>
-                
-                <!-- Quick stats -->
-                <div class="text-center">
-                    <small class="text-muted">
-                        {{ (file.likes or 0) + (file.dislikes or 0) }} total votes
-                    </small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Comments Card -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <h6 class="mb-0">
-                    <i class="fas fa-comments me-2"></i>Comments ({{ file.comments|length if file.comments else 0 }})
-                </h6>
-            </div>
-            <div class="card-body">
-                <!-- Add Comment Form -->
-                <form onsubmit="addComment(event, '{{ file.id }}', '{{ file_type }}')" class="mb-3">
-                    <div class="mb-2">
-                        <input type="text" class="form-control form-control-sm" 
-                               placeholder="Your name" required id="comment-name-{{ file.id }}">
-                    </div>
-                    <div class="mb-2">
-                        <textarea class="form-control form-control-sm" rows="2"
-                                  placeholder="Write a comment..." required id="comment-text-{{ file.id }}"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-paper-plane me-1"></i>Post Comment
-                    </button>
-                </form>
-                
-                <!-- Comments List -->
-                <div id="comments-list-{{ file.id }}" style="max-height: 300px; overflow-y: auto;">
-                    {% if file.comments %}
-                        {% for comment in file.comments|reverse %}
-                        <div class="border-bottom pb-2 mb-2">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <strong class="small text-primary">{{ comment.name }}</strong>
-                                <small class="text-muted">{{ comment.date }}</small>
-                            </div>
-                            <p class="mb-0 small">{{ comment.comment }}</p>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-comment-slash fa-2x mb-2"></i>
-                            <p class="small mb-0">No comments yet.<br>Be the first to comment!</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+        <div class="toast-body" id="toast-message">
+            <!-- Message will be inserted here -->
         </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    loadFilePreview();
-});
-
-function loadFilePreview() {
-    const fileName = '{{ file.filename }}';
-    const filePath = '{{ file.file_path }}';
-    const fileExtension = fileName.split('.').pop().toLowerCase();
-    const previewContainer = document.getElementById('filePreview');
-    
-    // Show loading state
-    previewContainer.innerHTML = `
-        <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading preview...</span>
-                </div>
-                <p class="text-muted">Loading preview...</p>
-            </div>
-        </div>
-    `;
-    
-    setTimeout(() => {
-        if (['pdf'].includes(fileExtension)) {
-            // PDF Preview
-            previewContainer.innerHTML = `
-                <div class="p-3">
-                    <iframe src="/static/pdfjs/web/viewer.html?file=${encodeURIComponent('/' + filePath)}" 
-                            width="100%" height="600px" 
-                            style="border: 1px solid #ddd; border-radius: 5px;">
-                    </iframe>
-                    <div class="text-center mt-2">
-                        <small class="text-muted">PDF Preview - Use browser controls to navigate</small>
-                    </div>
-                </div>
-            `;
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
-            // Image Preview
-            previewContainer.innerHTML = `
-                <div class="p-3">
-                    <img src="/${filePath}" class="img-fluid rounded shadow-sm" 
-                         alt="${fileName}" style="max-height: 500px;">
-                    <div class="text-center mt-2">
-                        <small class="text-muted">Image Preview</small>
-                    </div>
-                </div>
-            `;
-        } else if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
-            // Text file preview
-            fetch('/' + filePath)
-                .then(response => response.text())
-                .then(text => {
-                    previewContainer.innerHTML = `
-                        <div class="p-3 text-start">
-                            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto; white-space: pre-wrap;">${text.substring(0, 2000)}${text.length > 2000 ? '...\n\n[File truncated for preview]' : ''}</pre>
-                            <div class="text-center mt-2">
-                                <small class="text-muted">Text Preview</small>
-                            </div>
-                        </div>
-                    `;
-                })
-                .catch(() => {
-                    showNoPreview(fileExtension);
-                });
-        } else {
-            // No preview available
-            showNoPreview(fileExtension);
-        }
-    }, 500);
+// Share functionality
+function shareFile() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard!');
+    }).catch(() => {
+        showToast('Failed to copy link');
+    });
 }
 
-function showNoPreview(fileExtension) {
-    const previewContainer = document.getElementById('filePreview');
-    previewContainer.innerHTML = `
-        <div class="d-flex justify-content-center align-items-center text-center" style="height: 400px;">
-            <div>
-                <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
-                <h5 class="text-muted">Preview Not Available</h5>
-                <p class="text-muted mb-3">
-                    Preview is not supported for .${fileExtension.toUpperCase()} files.<br>
-                    Click the download button to view the file.
-                </p>
-                <a href="{{ url_for('download_syllabus' if file_type == 'Syllabus' else 'download', file_id=file.id) }}" 
-                   class="btn btn-primary">
-                    <i class="fas fa-download me-2"></i>Download to View
-                </a>
-            </div>
-        </div>
-    `;
-}
-
-function goBack() {
-    if (document.referrer && document.referrer.includes(window.location.host)) {
-        window.history.back();
+// Toggle comments visibility
+function toggleComments() {
+    const container = document.getElementById('comments-container');
+    const toggle = document.getElementById('comments-toggle');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggle.textContent = 'Hide';
     } else {
-        window.location.href = '{{ url_for("index") }}';
+        container.style.display = 'none';
+        toggle.textContent = 'Show';
     }
 }
 
-// Vote function for file detail page
-function voteFile(fileId, voteType, fileType) {
-    const voteKey = `vote_${fileType.toLowerCase()}_${fileId}`;
-    const existingVote = localStorage.getItem(voteKey);
-    
-    if (existingVote === voteType) {
-        showAlert('You have already voted for this file!', 'warning');
-        return;
-    }
-    
-    if (existingVote && existingVote !== voteType) {
-        showAlert('You can only vote once per file!', 'warning');
-        return;
-    }
-    
-    const endpoint = fileType === 'Syllabus' ? `/vote_syllabus/${fileId}` : `/vote/${fileId}`;
-    
-    fetch(endpoint, {
+// Vote functionality
+function voteFile(fileId, voteType) {
+    fetch(`/vote/${fileId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -309,135 +267,65 @@ function voteFile(fileId, voteType, fileType) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            document.getElementById(`likes-${fileId}`).textContent = data.likes;
-            document.getElementById(`dislikes-${fileId}`).textContent = data.dislikes;
-            localStorage.setItem(voteKey, voteType);
-            
-            const message = voteType === 'like' ? 'Thanks for your positive feedback!' : 'Thanks for your feedback!';
-            showAlert(message, 'success');
+            document.getElementById('likes-count').textContent = data.likes;
+            document.getElementById('dislikes-count').textContent = data.dislikes;
+            showToast(`${voteType === 'like' ? 'Liked' : 'Disliked'}!`);
         } else {
-            showAlert('Failed to record vote. Please try again.', 'error');
+            showToast('Vote failed');
         }
     })
-    .catch(error => {
-        console.error('Vote error:', error);
-        showAlert('Failed to record vote. Please try again.', 'error');
+    .catch(() => {
+        showToast('Vote failed');
     });
 }
 
-// Comment function for file detail page
-function addComment(event, fileId, fileType) {
+// Add comment functionality
+function addComment(event) {
     event.preventDefault();
     
-    const nameInput = document.getElementById(`comment-name-${fileId}`);
-    const textInput = document.getElementById(`comment-text-${fileId}`);
+    const name = document.getElementById('comment-name').value;
+    const text = document.getElementById('comment-text').value;
     
-    const name = nameInput.value.trim();
-    const comment = textInput.value.trim();
-    
-    if (!name || !comment) {
-        showAlert('Please enter both name and comment.', 'warning');
-        return;
-    }
-    
-    fetch(`/comment/${fileId}`, {
+    fetch(`/comment/{{ file.id }}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: name, comment: comment, file_type: fileType })
+        body: JSON.stringify({ name: name, text: text })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            nameInput.value = '';
-            textInput.value = '';
-            
-            const commentsList = document.getElementById(`comments-list-${fileId}`);
-            const newCommentHtml = `
-                <div class="border-bottom pb-2 mb-2">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <strong class="small text-primary">${data.comment.name}</strong>
-                        <small class="text-muted">${data.comment.date}</small>
-                    </div>
-                    <p class="mb-0 small">${data.comment.comment}</p>
-                </div>
+            // Add comment to the list
+            const commentsList = document.getElementById('comments-list');
+            const newComment = document.createElement('div');
+            newComment.className = 'comment mb-2 p-2 bg-light rounded';
+            newComment.innerHTML = `
+                <strong class="small">${name}</strong>
+                <span class="small text-muted">${new Date().toLocaleString()}</span>
+                <p class="small mb-0 mt-1">${text}</p>
             `;
+            commentsList.insertBefore(newComment, commentsList.firstChild);
             
-            if (commentsList.innerHTML.includes('No comments yet')) {
-                commentsList.innerHTML = newCommentHtml;
-            } else {
-                commentsList.insertAdjacentHTML('afterbegin', newCommentHtml);
-            }
+            // Clear form
+            document.getElementById('comment-name').value = '';
+            document.getElementById('comment-text').value = '';
             
-            // Update header count
-            const headerElement = document.querySelector('.card-header h6');
-            if (headerElement) {
-                headerElement.innerHTML = `<i class="fas fa-comments me-2"></i>Comments (${data.total_comments})`;
-            }
-            
-            showAlert('Comment added successfully!', 'success');
+            showToast('Comment added!');
         } else {
-            showAlert('Failed to add comment. Please try again.', 'error');
+            showToast('Failed to add comment');
         }
     })
-    .catch(error => {
-        console.error('Comment error:', error);
-        showAlert('Failed to add comment. Please try again.', 'error');
+    .catch(() => {
+        showToast('Failed to add comment');
     });
 }
 
-// Share function
-function shareFile(fileId, filename) {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/file/${fileId}`;
-    
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        showAlert('File link copied to clipboard!', 'success');
-    }).catch(err => {
-        const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        
-        try {
-            document.execCommand('copy');
-            showAlert('File link copied to clipboard!', 'success');
-        } catch (err) {
-            showAlert('Failed to copy link. Please copy manually: ' + shareUrl, 'info');
-        }
-        
-        document.body.removeChild(textArea);
-    });
+// Toast notification function
+function showToast(message) {
+    document.getElementById('toast-message').textContent = message;
+    const toast = new bootstrap.Toast(document.getElementById('notification-toast'));
+    toast.show();
 }
 </script>
-
-<style>
-.card {
-    border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
-}
-
-.card-header {
-    border-bottom: 1px solid #e9ecef;
-}
-
-#filePreview iframe {
-    border-radius: 8px;
-}
-
-.badge {
-    font-size: 0.75em;
-}
-
-@media (max-width: 768px) {
-    .col-lg-8, .col-lg-4 {
-        margin-bottom: 1rem;
-    }
-    
-    #filePreview iframe {
-        height: 300px !important;
-    }
-}
-</style>
 {% endblock %}
