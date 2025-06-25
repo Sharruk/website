@@ -333,9 +333,13 @@
       "semester": "2",
       "category": "CAT",
       "subject": "tamil and technology",
+      "description": "This file contains insights into the development of scientific Tamil.",
       "size": "58.0 KB",
       "upload_date": "2025-06-20 14:25:01",
-      "file_path": "uploads/Development_of_scientific_tamil.docx"
+      "file_path": "uploads/Development_of_scientific_tamil.docx",
+      "likes": 0,
+      "dislikes": 0,
+      "comments": []
     }
   ],
   "syllabus_files": []
