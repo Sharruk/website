@@ -324,6 +324,158 @@ def api_search():
             'count': 0
         }), 500
 
+@app.route('/vote/<int:file_id>', methods=['POST'])
+def vote_file(file_id):
+    """Handle like/dislike votes for files"""
+    try:
+        vote_type = request.json.get('vote_type')  # 'like' or 'dislike'
+        
+        if vote_type not in ['like', 'dislike']:
+            return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
+        
+        data = load_data()
+        files = data.get('files', [])
+        
+        # Find the file
+        file_found = False
+        for file in files:
+            if file['id'] == file_id:
+                file_found = True
+                
+                # Initialize vote counts if not present
+                if 'likes' not in file:
+                    file['likes'] = 0
+                if 'dislikes' not in file:
+                    file['dislikes'] = 0
+                
+                # Increment the vote count
+                if vote_type == 'like':
+                    file['likes'] += 1
+                else:
+                    file['dislikes'] += 1
+                
+                break
+        
+        if not file_found:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Save updated data
+        save_data(data)
+        
+        return jsonify({
+            'success': True,
+            'likes': file['likes'],
+            'dislikes': file['dislikes']
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Vote error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/comment/<int:file_id>', methods=['POST'])
+def add_comment(file_id):
+    """Add a comment to a file"""
+    try:
+        comment_data = request.json
+        name = comment_data.get('name', '').strip()
+        comment_text = comment_data.get('comment', '').strip()
+        file_type = comment_data.get('file_type', 'QP')  # 'QP' or 'Syllabus'
+        
+        if not name or not comment_text:
+            return jsonify({'success': False, 'error': 'Name and comment are required'}), 400
+        
+        data = load_data()
+        
+        # Choose the right file list based on file type
+        if file_type == 'Syllabus':
+            files = data.get('syllabus_files', [])
+        else:
+            files = data.get('files', [])
+        
+        # Find the file
+        file_found = False
+        for file in files:
+            if file['id'] == file_id:
+                file_found = True
+                
+                # Initialize comments if not present
+                if 'comments' not in file:
+                    file['comments'] = []
+                
+                # Add the new comment
+                new_comment = {
+                    'name': name,
+                    'comment': comment_text,
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M')
+                }
+                file['comments'].append(new_comment)
+                
+                break
+        
+        if not file_found:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Save updated data
+        save_data(data)
+        
+        return jsonify({
+            'success': True,
+            'comment': new_comment,
+            'total_comments': len(file['comments'])
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Comment error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/vote_syllabus/<int:file_id>', methods=['POST'])
+def vote_syllabus_file(file_id):
+    """Handle like/dislike votes for syllabus files"""
+    try:
+        vote_type = request.json.get('vote_type')  # 'like' or 'dislike'
+        
+        if vote_type not in ['like', 'dislike']:
+            return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
+        
+        data = load_data()
+        files = data.get('syllabus_files', [])
+        
+        # Find the file
+        file_found = False
+        for file in files:
+            if file['id'] == file_id:
+                file_found = True
+                
+                # Initialize vote counts if not present
+                if 'likes' not in file:
+                    file['likes'] = 0
+                if 'dislikes' not in file:
+                    file['dislikes'] = 0
+                
+                # Increment the vote count
+                if vote_type == 'like':
+                    file['likes'] += 1
+                else:
+                    file['dislikes'] += 1
+                
+                break
+        
+        if not file_found:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Save updated data
+        save_data(data)
+        
+        return jsonify({
+            'success': True,
+            'likes': file['likes'],
+            'dislikes': file['dislikes']
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Vote error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def highlight_search_terms(file, query):
     """Add highlighting to search terms in file data"""
     highlighted_file = file.copy()
