@@ -35,6 +35,26 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+def load_community_data():
+    """Load community data from JSON file"""
+    try:
+        if os.path.exists('community.json'):
+            with open('community.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"discussions": []}
+    except Exception as e:
+        app.logger.error(f"Error loading community data: {str(e)}")
+        return {"discussions": []}
+
+def save_community_data(data):
+    """Save community data to JSON file"""
+    try:
+        with open('community.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving community data: {str(e)}")
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -1127,6 +1147,98 @@ def file_too_large(error):
 def page_not_found(error):
     """Handle 404 errors"""
     return redirect(url_for('index'))
+
+@app.route('/community')
+def community():
+    """Community discussion page"""
+    community_data = load_community_data()
+    discussions = community_data.get('discussions', [])
+    return render_template('community.html', discussions=discussions)
+
+@app.route('/community/create', methods=['POST'])
+def create_discussion():
+    """Create a new discussion"""
+    try:
+        data = request.json
+        name = data.get('name', 'Anonymous').strip()
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        
+        if not title or not description:
+            return jsonify({'success': False, 'error': 'Title and description are required'}), 400
+        
+        community_data = load_community_data()
+        
+        # Generate unique ID
+        max_id = 0
+        for discussion in community_data.get('discussions', []):
+            if discussion.get('id', 0) > max_id:
+                max_id = discussion['id']
+        new_id = max_id + 1
+        
+        # Create new discussion
+        new_discussion = {
+            'id': new_id,
+            'name': name,
+            'title': title,
+            'description': description,
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'replies': []
+        }
+        
+        community_data['discussions'].insert(0, new_discussion)  # Add to beginning
+        save_community_data(community_data)
+        
+        return jsonify({'success': True, 'discussion': new_discussion})
+        
+    except Exception as e:
+        app.logger.error(f"Error creating discussion: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/community/reply', methods=['POST'])
+def add_discussion_reply():
+    """Add a reply to a discussion"""
+    try:
+        data = request.json
+        discussion_id = data.get('discussion_id')
+        name = data.get('name', 'Anonymous').strip()  
+        message = data.get('message', '').strip()
+        
+        if not discussion_id or not message:
+            return jsonify({'success': False, 'error': 'Discussion ID and message are required'}), 400
+        
+        community_data = load_community_data()
+        
+        # Find the discussion
+        discussion_found = False
+        for discussion in community_data.get('discussions', []):
+            if discussion['id'] == discussion_id:
+                discussion_found = True
+                
+                # Initialize replies if not present
+                if 'replies' not in discussion:
+                    discussion['replies'] = []
+                
+                # Add new reply
+                new_reply = {
+                    'name': name,
+                    'message': message,
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                discussion['replies'].append(new_reply)
+                break
+        
+        if not discussion_found:
+            return jsonify({'success': False, 'error': 'Discussion not found'}), 404
+        
+        save_community_data(community_data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error adding reply: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

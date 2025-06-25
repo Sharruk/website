@@ -119,6 +119,8 @@ A comprehensive Flask-based web portal designed for college students to upload, 
 - June 20, 2025. Enhanced search UX - made search component collapsible by default, added to all upload pages, integrated search links in navigation and upload areas, search expands only when user clicks the search box
 - June 20, 2025. Added social features - implemented like/dislike buttons with vote tracking, collapsible comment system with name and timestamp, optional file descriptions during upload, share button with clipboard copy functionality, all data stored in JSON without database dependency
 - June 25, 2025. Implemented file detail view system - removed direct download buttons from file lists, created clickable file cards that open dedicated detail pages with file preview (PDF/images), description display, social features (likes/comments), and download/share actions, mobile-friendly design
+- June 25, 2025. Enhanced file upload and preview system - added optional description field for uploads, improved file preview with PDF iframe, image display, DOCX preview via Microsoft Office Online, and text file preview with truncation
+- June 25, 2025. Added comprehensive community discussion system - created dedicated community page with discussion creation, reply functionality, mobile-friendly design, all data stored in community.json without database dependency
 
 ## User Preferences
 
