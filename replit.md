@@ -118,6 +118,7 @@ A comprehensive Flask-based web portal designed for college students to upload, 
 - June 20, 2025. Built JSON-based global search system - created modular search component for question papers and syllabus pages, implemented live filtering with highlighting, added delete functionality from search results, fully responsive design without database dependency
 - June 20, 2025. Enhanced search UX - made search component collapsible by default, added to all upload pages, integrated search links in navigation and upload areas, search expands only when user clicks the search box
 - June 20, 2025. Added social features - implemented like/dislike buttons with vote tracking, collapsible comment system with name and timestamp, optional file descriptions during upload, share button with clipboard copy functionality, all data stored in JSON without database dependency
+- June 25, 2025. Implemented file detail view system - removed direct download buttons from file lists, created clickable file cards that open dedicated detail pages with file preview (PDF/images), description display, social features (likes/comments), and download/share actions, mobile-friendly design
 
 ## User Preferences
 
