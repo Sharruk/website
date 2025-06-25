@@ -30,18 +30,19 @@
         <div class="col-lg-6 col-xl-4">
             <div class="card h-100 shadow-sm club-card">
                 {% if club.instagram_screenshot %}
-                <div class="club-image-container" style="height: 200px; overflow: hidden;">
+                <div class="club-image-container">
                     <img src="{{ url_for('club_screenshot', filename=club.instagram_screenshot) }}" 
-                         class="card-img-top" 
+                         class="club-screenshot" 
                          alt="{{ club.name }} Instagram"
-                         style="width: 100%; height: 100%; object-fit: cover;"
+                         data-src="{{ url_for('club_screenshot', filename=club.instagram_screenshot) }}"
+                         data-title="{{ club.name }} Instagram"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="d-none align-items-center justify-content-center bg-light" style="height: 100%;">
+                    <div class="d-none align-items-center justify-content-center bg-light club-image-fallback">
                         <i class="fas fa-image fa-3x text-muted"></i>
                     </div>
                 </div>
                 {% else %}
-                <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center" style="height: 200px;">
+                <div class="club-placeholder">
                     <div class="text-center text-white">
                         <i class="fas fa-users fa-3x mb-2"></i>
                         <h6 class="mb-0">{{ club.name[:20] }}{% if club.name|length > 20 %}...{% endif %}</h6>
@@ -123,6 +124,21 @@
     {% endif %}
 </div>
 
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Club Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Notification -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="notification-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -142,6 +158,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = 'inline-block';
     });
+    
+    // Add click event listeners to club screenshots
+    document.querySelectorAll('.club-screenshot').forEach(img => {
+        img.addEventListener('click', function() {
+            const src = this.getAttribute('data-src');
+            const title = this.getAttribute('data-title');
+            openImageModal(src, title);
+        });
+    });
 });
 
 // Copy to clipboard function
@@ -158,6 +183,20 @@ function copyToClipboard(text) {
         document.body.removeChild(textArea);
         showToast('Instagram link copied to clipboard!', 'success');
     });
+}
+
+// Open image modal for zooming
+function openImageModal(imageSrc, imageAlt) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalTitle = document.getElementById('imageModalLabel');
+    
+    modalImage.src = imageSrc;
+    modalImage.alt = imageAlt;
+    modalTitle.textContent = imageAlt;
+    
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
 }
 
 // Delete club function (no confirmation for quick testing)
@@ -229,12 +268,40 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
 }
 
-.club-image-container img {
-    transition: transform 0.3s ease;
+/* Club image styling - fixed dimensions and responsive */
+.club-image-container {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 0.375rem 0.375rem 0 0;
 }
 
-.club-card:hover .club-image-container img {
-    transform: scale(1.05);
+.club-screenshot {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    display: block;
+}
+
+.club-screenshot:hover {
+    transform: scale(1.02);
+}
+
+.club-image-fallback {
+    height: 200px;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.club-placeholder {
+    height: 200px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem 0.375rem 0 0;
 }
 
 .bg-gradient-primary {
