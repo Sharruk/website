@@ -615,9 +615,13 @@ def upload():
                         "semester": semester,
                         "category": category,
                         "subject": subject,
+                        "description": description,
                         "size": get_file_size(filepath),
                         "upload_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        "file_path": filepath
+                        "file_path": filepath,
+                        "likes": 0,
+                        "dislikes": 0,
+                        "comments": []
                     }
                     
                     data['files'].append(file_data)
