@@ -49,9 +49,10 @@
                         {% set file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else '' %}
                         {% if file_ext == 'pdf' %}
                         <div class="text-center">
-                            <iframe src="/uploads/{{ file.filename }}" 
+                            <iframe src="{{ url_for('uploaded_file', filename=file.filename) }}" 
                                     class="border rounded" 
-                                    style="width: 100%; height: 600px;">
+                                    style="width: 100%; height: 600px;"
+                                    title="PDF Preview">
                                 <p>Your browser does not support PDFs. 
                                    <a href="{{ url_for('download', file_id=file.id) if file_type == 'QP' else url_for('download_syllabus', file_id=file.id) }}">Download the PDF</a>.</p>
                             </iframe>
@@ -59,20 +60,35 @@
                         </div>
                         {% elif file_ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] %}
                         <div class="text-center">
-                            <img src="/uploads/{{ file.filename }}" 
+                            <img src="{{ url_for('uploaded_file', filename=file.filename) }}" 
                                  class="img-fluid rounded shadow" 
                                  alt="{{ file.custom_filename }}"
-                                 style="max-height: 500px;">
+                                 style="max-height: 500px;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div style="display: none;" class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Image preview failed to load
+                            </div>
                             <p class="text-muted mt-2 small">Image Preview</p>
                         </div>
                         {% elif file_ext in ['doc', 'docx'] %}
                         <div class="text-center">
                             <iframe src="https://view.officeapps.live.com/op/embed.aspx?src={{ request.url_root }}uploads/{{ file.filename }}" 
                                     class="border rounded" 
-                                    style="width: 100%; height: 600px;">
+                                    style="width: 100%; height: 600px;"
+                                    title="Document Preview"
+                                    onload="this.style.display='block';"
+                                    onerror="this.style.display='none'; document.getElementById('docx-fallback-{{ file.id }}').style.display='block';">
                                 <p>Document preview not available. 
                                    <a href="{{ url_for('download', file_id=file.id) if file_type == 'QP' else url_for('download_syllabus', file_id=file.id) }}">Download the document</a>.</p>
                             </iframe>
+                            <div id="docx-fallback-{{ file.id }}" style="display: none;" class="alert alert-info">
+                                <i class="fas fa-file-word fa-2x mb-2"></i>
+                                <h6>Document Preview Not Available</h6>
+                                <p class="small">Word document preview requires external service. Click download to view the file.</p>
+                                <a href="{{ url_for('download', file_id=file.id) if file_type == 'QP' else url_for('download_syllabus', file_id=file.id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-download me-1"></i>Download Document
+                                </a>
+                            </div>
                             <p class="text-muted mt-2 small">Document Preview via Microsoft Office Online</p>
                         </div>
                         {% elif file_ext in ['txt', 'md', 'json', 'csv'] %}
@@ -83,8 +99,11 @@
                             <p class="text-muted mt-2 small text-center">Text File Preview</p>
                         </div>
                         <script>
-                            fetch('/uploads/{{ file.filename }}')
-                                .then(response => response.text())
+                            fetch('{{ url_for("uploaded_file", filename=file.filename) }}')
+                                .then(response => {
+                                    if (!response.ok) throw new Error('File not found');
+                                    return response.text();
+                                })
                                 .then(text => {
                                     const preview = document.getElementById('text-preview');
                                     const truncated = text.length > 2000 ? text.substring(0, 2000) + '\n\n[File truncated for preview]' : text;

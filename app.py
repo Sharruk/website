@@ -1148,6 +1148,15 @@ def page_not_found(error):
     """Handle 404 errors"""
     return redirect(url_for('index'))
 
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded files"""
+    try:
+        return send_file(os.path.join(UPLOAD_FOLDER, filename))
+    except Exception as e:
+        app.logger.error(f"Error serving file {filename}: {str(e)}")
+        return "File not found", 404
+
 @app.route('/community')
 def community():
     """Community discussion page"""

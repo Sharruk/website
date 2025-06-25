@@ -400,6 +400,24 @@
           "date": "2025-06-25 13:49"
         }
       ]
+    },
+    {
+      "id": 5,
+      "filename": "BST.docx",
+      "original_filename": "BST.docx",
+      "custom_filename": "BST",
+      "course_type": "pg",
+      "department": "mtech_cse",
+      "semester": "2",
+      "category": "ESE",
+      "subject": "DSA",
+      "description": "basic implementation of BST in c along with the code",
+      "size": "33.9 KB",
+      "upload_date": "2025-06-25 14:14:09",
+      "file_path": "uploads/BST.docx",
+      "likes": 0,
+      "dislikes": 0,
+      "comments": []
     }
   ],
   "syllabus_files": []
