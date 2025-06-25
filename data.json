@@ -376,6 +376,30 @@
       "likes": 1,
       "dislikes": 1,
       "comments": []
+    },
+    {
+      "id": 4,
+      "filename": "Toyota.csv",
+      "original_filename": "Toyota.csv",
+      "custom_filename": "Toyota.csv",
+      "course_type": "mba",
+      "department": "general_mba",
+      "semester": "2",
+      "category": "ESE",
+      "subject": "data science",
+      "description": "",
+      "size": "64.1 KB",
+      "upload_date": "2025-06-25 13:46:20",
+      "file_path": "uploads/Toyota.csv",
+      "likes": 5,
+      "dislikes": 3,
+      "comments": [
+        {
+          "name": "brock",
+          "comment": "this is the admin. this for the checking of the app comment section coz just now imported from the git hub",
+          "date": "2025-06-25 13:49"
+        }
+      ]
     }
   ],
   "syllabus_files": []
