@@ -1,0 +1,31 @@
+{
+  "bus_routes": [
+    {
+      "id": 1,
+      "title": "SSN Bus Route - Chennai Central",
+      "description": "Daily bus service from Chennai Central Railway Station to SSN College of Engineering. Peak hours: 7:30 AM, 8:30 AM (Morning), 5:30 PM, 6:30 PM (Evening). Contact: transport@ssn.edu.in for more details.",
+      "filename": "bus_route_20250626_sample_chennai_central.pdf",
+      "original_filename": "Chennai_Central_Bus_Route.pdf",
+      "file_size": 245760,
+      "file_extension": "pdf",
+      "size": "240.0 KB",
+      "upload_date": "2025-06-26T03:45:00.000000",
+      "file_path": "uploads/bus_routes/bus_route_20250626_sample_chennai_central.pdf",
+      "likes": 5,
+      "dislikes": 0,
+      "comments": [
+        {
+          "name": "Parent Kumar",
+          "comment": "Very helpful for new students! Thank you for providing clear timings.",
+          "timestamp": "2025-06-26T04:00:00.000000"
+        },
+        {
+          "name": "Student Priya",
+          "comment": "Is this route available on weekends too?",
+          "timestamp": "2025-06-26T04:15:00.000000"
+        }
+      ]
+    }
+  ],
+  "next_id": 2
+}
