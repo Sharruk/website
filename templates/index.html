@@ -34,7 +34,7 @@
 
 <div class="row g-4 justify-content-center">
     <!-- Question Papers Section -->
-    <div class="col-lg-4 col-md-6">
+    <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-lg hover-card border-0">
             <div class="card-body text-center p-4">
                 <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
@@ -53,7 +53,7 @@
     </div>
 
     <!-- Syllabus Section -->
-    <div class="col-lg-4 col-md-6">
+    <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-lg hover-card border-0">
             <div class="card-body text-center p-4">
                 <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Student Clubs Section -->
-    <div class="col-lg-4 col-md-6">
+    <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-lg hover-card border-0">
             <div class="card-body text-center p-4">
                 <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
@@ -85,6 +85,25 @@
                 <a href="{{ url_for('clubs') }}" class="btn btn-warning w-100">
                     <i class="fas fa-arrow-right me-2"></i>
                     View Student Clubs
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bus Routes Section -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-lg hover-card border-0">
+            <div class="card-body text-center p-4">
+                <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-bus fa-2x text-info"></i>
+                </div>
+                <h4 class="card-title mb-3 text-info">Bus Routes</h4>
+                <p class="card-text text-muted mb-4">
+                    Access bus route information for new students and parents. Official routes sent via SSN email after admission.
+                </p>
+                <a href="{{ url_for('bus_routes') }}" class="btn btn-info w-100">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    View Bus Routes
                 </a>
             </div>
         </div>

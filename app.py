@@ -76,6 +76,27 @@ def save_clubs_data(data):
         app.logger.error(f"Error saving clubs data: {str(e)}")
         raise
 
+def load_transportation_data():
+    """Load transportation data from JSON file"""
+    try:
+        if os.path.exists('transportation.json'):
+            with open('transportation.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"bus_routes": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading transportation data: {str(e)}")
+        return {"bus_routes": [], "next_id": 1}
+
+def save_transportation_data(data):
+    """Save transportation data to JSON file"""
+    try:
+        with open('transportation.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving transportation data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -1447,6 +1468,210 @@ def delete_club(club_id):
     except Exception as e:
         app.logger.error(f"Error deleting club: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Bus Routes Routes
+@app.route('/bus-routes')
+def bus_routes():
+    """Bus Routes page showing all uploaded routes"""
+    try:
+        data = load_transportation_data()
+        bus_routes = data.get('bus_routes', [])
+        
+        # Sort by upload date (newest first)
+        bus_routes = sorted(bus_routes, key=lambda x: x.get('upload_date', ''), reverse=True)
+        
+        # Check if user is admin (simple check)
+        is_admin = request.args.get('admin') == 'true'
+        
+        return render_template('bus_routes.html', 
+                             bus_routes=bus_routes,
+                             is_admin=is_admin)
+    except Exception as e:
+        app.logger.error(f"Error loading bus routes: {str(e)}")
+        flash('Error loading bus routes', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/bus-routes/upload', methods=['POST'])
+def upload_bus_route():
+    """Upload new bus route file (admin only)"""
+    try:
+        # Simple admin check
+        if request.args.get('admin') != 'true':
+            flash('Admin access required', 'error')
+            return redirect(url_for('bus_routes'))
+        
+        if 'file' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(url_for('bus_routes') + '?admin=true')
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('bus_routes') + '?admin=true')
+        
+        # Get form data
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        if not title:
+            flash('Title is required', 'error')
+            return redirect(url_for('bus_routes') + '?admin=true')
+        
+        if file and file.filename and allowed_file(file.filename):
+            # Load existing data
+            data = load_transportation_data()
+            
+            # Generate unique filename
+            original_filename = file.filename
+            filename = secure_filename(original_filename)
+            
+            if not filename or filename == '':
+                raise ValueError("Invalid filename after security processing")
+            
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            unique_filename = f"bus_route_{timestamp}_{filename}"
+            
+            # Create uploads/bus_routes directory
+            bus_routes_dir = os.path.join(UPLOAD_FOLDER, 'bus_routes')
+            os.makedirs(bus_routes_dir, exist_ok=True)
+            
+            filepath = os.path.join(bus_routes_dir, unique_filename)
+            
+            # Save file
+            file.save(filepath)
+            
+            # Verify file was saved
+            if not os.path.exists(filepath):
+                raise IOError("File was not saved successfully")
+            
+            # Get file info
+            file_size = os.path.getsize(filepath)
+            file_extension = filename.rsplit('.', 1)[1].lower()
+            
+            # Generate unique ID
+            new_id = data.get('next_id', 1)
+            data['next_id'] = new_id + 1
+            
+            # Create file info
+            file_info = {
+                'id': new_id,
+                'title': title,
+                'description': description,
+                'filename': unique_filename,
+                'original_filename': original_filename,
+                'file_size': file_size,
+                'file_extension': file_extension,
+                'size': f"{file_size / (1024*1024):.1f} MB" if file_size > 1024*1024 else f"{file_size / 1024:.1f} KB",
+                'upload_date': datetime.now().isoformat(),
+                'file_path': filepath
+            }
+            
+            data['bus_routes'].append(file_info)
+            save_transportation_data(data)
+            
+            flash('Bus route uploaded successfully!', 'success')
+            
+        else:
+            flash('Invalid file type. Please upload PDF or image files.', 'error')
+    
+    except Exception as e:
+        app.logger.error(f"Bus route upload error: {str(e)}")
+        flash(f'Upload error: {str(e)}', 'error')
+    
+    return redirect(url_for('bus_routes') + '?admin=true')
+
+@app.route('/bus-routes/download/<int:file_id>')
+def download_bus_route(file_id):
+    """Download bus route file"""
+    try:
+        data = load_transportation_data()
+        file_data = None
+        
+        for f in data.get('bus_routes', []):
+            if f['id'] == file_id:
+                file_data = f
+                break
+        
+        if not file_data:
+            flash('File not found', 'error')
+            return redirect(url_for('bus_routes'))
+        
+        filepath = file_data['file_path']
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            return send_file(filepath, as_attachment=True, download_name=file_data['original_filename'])
+        else:
+            flash('File not found on disk', 'error')
+            return redirect(url_for('bus_routes'))
+    
+    except Exception as e:
+        app.logger.error(f"Bus route download error: {str(e)}")
+        flash('Error downloading file', 'error')
+        return redirect(url_for('bus_routes'))
+
+@app.route('/bus-routes/delete/<int:file_id>', methods=['POST'])
+def delete_bus_route(file_id):
+    """Delete bus route file (admin only)"""
+    try:
+        # Simple admin check
+        if request.args.get('admin') != 'true':
+            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+        
+        data = load_transportation_data()
+        file_data = None
+        file_index = -1
+        
+        for i, f in enumerate(data.get('bus_routes', [])):
+            if f['id'] == file_id:
+                file_data = f
+                file_index = i
+                break
+        
+        if not file_data:
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Delete physical file
+        filepath = file_data['file_path']
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            os.remove(filepath)
+        
+        # Remove from data
+        data['bus_routes'].pop(file_index)
+        save_transportation_data(data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting bus route: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/bus-routes/file/<filename>')
+def bus_route_file(filename):
+    """Serve bus route files securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        bus_routes_dir = os.path.join(UPLOAD_FOLDER, 'bus_routes')
+        file_path = os.path.join(bus_routes_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Bus route file not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within bus_routes directory
+        bus_routes_dir_abs = os.path.abspath(bus_routes_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(bus_routes_dir_abs):
+            app.logger.warning(f"File path outside bus_routes directory: {file_path_abs}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(bus_routes_dir_abs, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving bus route file {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
