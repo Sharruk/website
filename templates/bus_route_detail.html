@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}{{ file_data.title }} - Bus Routes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('bus_routes') }}{% if is_admin %}?admin=true{% endif %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bus Routes
+            </a>
+        </div>
+    </div>
+
+    <!-- File Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-file-{{ 'pdf' if file_data.file_extension == 'pdf' else 'image' }} me-2"></i>
+                            {{ file_data.title }}
+                        </h3>
+                        <div class="btn-group">
+                            <a href="{{ url_for('download_bus_route', file_id=file_data.id) }}" 
+                               class="btn btn-light btn-sm">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                            <button class="btn btn-light btn-sm" 
+                                    onclick="shareRoute({{ file_data.id }}, '{{ file_data.title }}')">
+                                <i class="fas fa-share me-1"></i>Share
+                            </button>
+                            {% if is_admin %}
+                            <button class="btn btn-danger btn-sm" 
+                                    onclick="deleteRoute({{ file_data.id }}, '{{ file_data.title }}')">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            {% if file_data.description %}
+                            <p class="card-text">{{ file_data.description }}</p>
+                            {% endif %}
+                            <div class="row text-muted small">
+                                <div class="col-sm-6">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Uploaded: {{ file_data.upload_date[:10] if file_data.upload_date else 'Unknown' }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <i class="fas fa-file me-1"></i>
+                                    Size: {{ file_data.size }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Vote Buttons -->
+                            <div class="text-end">
+                                <div class="btn-group mb-2" role="group">
+                                    <button type="button" class="btn btn-outline-success" 
+                                            onclick="voteRoute({{ file_data.id }}, 'like')">
+                                        <i class="fas fa-thumbs-up me-1"></i>
+                                        <span id="likes-{{ file_data.id }}">{{ file_data.likes or 0 }}</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="voteRoute({{ file_data.id }}, 'dislike')">
+                                        <i class="fas fa-thumbs-down me-1"></i>
+                                        <span id="dislikes-{{ file_data.id }}">{{ file_data.dislikes or 0 }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Preview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-eye me-2"></i>File Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if file_data.file_extension == 'pdf' %}
+                    <!-- PDF Preview -->
+                    <div class="text-center mb-3">
+                        <iframe src="{{ url_for('bus_route_file', filename=file_data.filename) }}" 
+                                style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.375rem;"
+                                title="{{ file_data.title }}">
+                            <p>Your browser does not support PDFs. 
+                               <a href="{{ url_for('download_bus_route', file_id=file_data.id) }}">Download the PDF</a>.
+                            </p>
+                        </iframe>
+                    </div>
+                    {% elif file_data.file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
+                    <!-- Image Preview -->
+                    <div class="text-center">
+                        <img src="{{ url_for('bus_route_file', filename=file_data.filename) }}" 
+                             class="img-fluid rounded shadow" 
+                             alt="{{ file_data.title }}"
+                             style="max-height: 600px;">
+                    </div>
+                    {% else %}
+                    <!-- Generic File -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-file fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">Preview not available for this file type.</p>
+                        <a href="{{ url_for('download_bus_route', file_id=file_data.id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Download File
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-comments me-2"></i>
+                        Comments <span class="badge bg-primary">{{ file_data.comments|length if file_data.comments else 0 }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add Comment Form -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Add a Comment</h6>
+                        <form id="commentForm">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <input type="text" class="form-control" id="commenterName" 
+                                           placeholder="Your Name" required>
+                                </div>
+                                <div class="col-md-8 mb-3">
+                                    <textarea class="form-control" id="commentText" rows="3" 
+                                              placeholder="Write your comment..." required></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Post Comment
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr>
+
+                    <!-- Comments List -->
+                    <div id="commentsList">
+                        {% if file_data.comments %}
+                            {% for comment in file_data.comments %}
+                            <div class="comment-item mb-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong class="text-primary">{{ comment.name }}</strong>
+                                        <p class="mb-1 mt-2">{{ comment.comment }}</p>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ comment.timestamp[:10] if comment.timestamp else 'Unknown' }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No comments yet. Be the first to comment!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Vote Function
+function voteRoute(routeId, voteType) {
+    fetch(`{{ url_for('vote_bus_route', file_id=0) }}`.replace('0', routeId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            vote_type: voteType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`likes-${routeId}`).textContent = data.likes;
+            document.getElementById(`dislikes-${routeId}`).textContent = data.dislikes;
+            showAlert(`${voteType === 'like' ? 'Liked' : 'Disliked'} successfully!`, 'success');
+        } else {
+            showAlert('Error processing vote: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error processing vote', 'error');
+    });
+}
+
+// Share Function
+function shareRoute(routeId, title) {
+    const url = window.location.href;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `Bus Route: ${title}`,
+            text: `Check out this bus route: ${title}`,
+            url: url
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('Link copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            showAlert('Failed to copy link', 'error');
+        });
+    }
+}
+
+// Delete Route Function (Admin Only)
+{% if is_admin %}
+function deleteRoute(routeId, title) {
+    if (confirm(`Are you sure you want to delete "${title}"?`)) {
+        fetch(`{{ url_for('delete_bus_route', file_id=0) }}`.replace('0', routeId) + '?admin=true', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Bus route deleted successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = '{{ url_for('bus_routes') }}{% if is_admin %}?admin=true{% endif %}';
+                }, 1000);
+            } else {
+                showAlert('Error deleting bus route: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error deleting bus route', 'error');
+        });
+    }
+}
+{% endif %}
+
+// Comment Form Handler
+document.getElementById('commentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('commenterName').value.trim();
+    const comment = document.getElementById('commentText').value.trim();
+    
+    if (!comment) {
+        showAlert('Please enter a comment', 'error');
+        return;
+    }
+    
+    fetch(`{{ url_for('add_bus_route_comment', file_id=file_data.id) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: name || 'Anonymous',
+            comment: comment
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Comment added successfully!', 'success');
+            // Reset form
+            document.getElementById('commenterName').value = '';
+            document.getElementById('commentText').value = '';
+            // Reload page to show new comment
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert('Error adding comment: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error adding comment', 'error');
+    });
+});
+
+// Alert function
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

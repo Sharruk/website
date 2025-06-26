@@ -1563,7 +1563,10 @@ def upload_bus_route():
                 'file_extension': file_extension,
                 'size': f"{file_size / (1024*1024):.1f} MB" if file_size > 1024*1024 else f"{file_size / 1024:.1f} KB",
                 'upload_date': datetime.now().isoformat(),
-                'file_path': filepath
+                'file_path': filepath,
+                'likes': 0,
+                'dislikes': 0,
+                'comments': []
             }
             
             data['bus_routes'].append(file_info)
@@ -1672,6 +1675,117 @@ def bus_route_file(filename):
     except Exception as e:
         app.logger.error(f"Error serving bus route file {filename}: {str(e)}")
         return f"Error serving file: {str(e)}", 500
+
+@app.route('/bus-routes/vote/<int:file_id>', methods=['POST'])
+def vote_bus_route(file_id):
+    """Handle like/dislike votes for bus route files"""
+    try:
+        vote_type = request.json.get('vote_type')
+        if vote_type not in ['like', 'dislike']:
+            return jsonify({'error': 'Invalid vote type'}), 400
+        
+        data = load_transportation_data()
+        file_data = None
+        
+        for file_item in data.get('bus_routes', []):
+            if file_item['id'] == file_id:
+                file_data = file_item
+                break
+        
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+        
+        # Update vote counts
+        if vote_type == 'like':
+            file_data['likes'] = file_data.get('likes', 0) + 1
+        else:
+            file_data['dislikes'] = file_data.get('dislikes', 0) + 1
+        
+        save_transportation_data(data)
+        
+        return jsonify({
+            'success': True,
+            'likes': file_data.get('likes', 0),
+            'dislikes': file_data.get('dislikes', 0)
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Bus route vote error: {str(e)}")
+        return jsonify({'error': 'Failed to process vote'}), 500
+
+@app.route('/bus-routes/comment/<int:file_id>', methods=['POST'])
+def add_bus_route_comment(file_id):
+    """Add a comment to a bus route file"""
+    try:
+        comment_text = request.json.get('comment', '').strip()
+        commenter_name = request.json.get('name', '').strip()
+        
+        if not comment_text:
+            return jsonify({'error': 'Comment text is required'}), 400
+        
+        if not commenter_name:
+            commenter_name = 'Anonymous'
+        
+        data = load_transportation_data()
+        file_data = None
+        
+        for file_item in data.get('bus_routes', []):
+            if file_item['id'] == file_id:
+                file_data = file_item
+                break
+        
+        if not file_data:
+            return jsonify({'error': 'File not found'}), 404
+        
+        # Add comment
+        new_comment = {
+            'name': commenter_name,
+            'comment': comment_text,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if 'comments' not in file_data:
+            file_data['comments'] = []
+        
+        file_data['comments'].append(new_comment)
+        save_transportation_data(data)
+        
+        return jsonify({
+            'success': True,
+            'comment': new_comment
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Bus route comment error: {str(e)}")
+        return jsonify({'error': 'Failed to add comment'}), 500
+
+@app.route('/bus-routes/detail/<int:file_id>')
+def bus_route_detail(file_id):
+    """Display detailed view of a bus route file"""
+    try:
+        data = load_transportation_data()
+        file_data = None
+        
+        for file_item in data.get('bus_routes', []):
+            if file_item['id'] == file_id:
+                file_data = file_item
+                break
+        
+        if not file_data:
+            flash('File not found', 'error')
+            return redirect(url_for('bus_routes'))
+        
+        # Check if user is admin
+        is_admin = request.args.get('admin') == 'true'
+        
+        return render_template('bus_route_detail.html', 
+                             file_data=file_data,
+                             is_admin=is_admin)
+    
+    except Exception as e:
+        app.logger.error(f"Error loading bus route detail: {str(e)}")
+        flash('Error loading file details', 'error')
+        return redirect(url_for('bus_routes'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

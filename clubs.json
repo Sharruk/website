@@ -1,14 +1,6 @@
 {
   "clubs": [
     {
-      "id": 2,
-      "name": "Robotics Club",
-      "description": "Explore the world of robotics through hands-on projects, competitions, and technical workshops.",
-      "instagram_link": "https://instagram.com/robotics_club",
-      "instagram_screenshot": null,
-      "created_at": "2025-06-25T18:00:00Z"
-    },
-    {
       "id": 7,
       "name": "ssn_codingclub",
       "description": "where students solve real world problem and participate in inter college hackathon.",
