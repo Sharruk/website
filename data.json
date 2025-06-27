@@ -406,6 +406,24 @@
       "likes": 0,
       "dislikes": 0,
       "comments": []
+    },
+    {
+      "id": 8,
+      "filename": "syllabus.docx",
+      "original_filename": "syllabus.docx",
+      "custom_filename": "syllabus.docx",
+      "course_type": "ug",
+      "department": "cse",
+      "semester": "3",
+      "category": "CAT",
+      "subject": "data science",
+      "description": "this file contains data science syllabus for the 3rd semester.",
+      "size": "143.3 KB",
+      "upload_date": "2025-06-27 03:10:11",
+      "file_path": "uploads/syllabus.docx",
+      "likes": 4,
+      "dislikes": 5,
+      "comments": []
     }
   ],
   "syllabus_files": []
