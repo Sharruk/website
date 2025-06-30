@@ -118,6 +118,27 @@ def save_canteen_data(data):
         app.logger.error(f"Error saving canteen data: {str(e)}")
         raise
 
+def load_places_data():
+    """Load places data from JSON file"""
+    try:
+        if os.path.exists('places.json'):
+            with open('places.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"places": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading places data: {str(e)}")
+        return {"places": [], "next_id": 1}
+
+def save_places_data(data):
+    """Save places data to JSON file"""
+    try:
+        with open('places.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving places data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -1958,6 +1979,157 @@ def canteen_photo(filename):
         return send_from_directory(canteen_dir_abs, filename, as_attachment=False)
     except Exception as e:
         app.logger.error(f"Error serving canteen photo {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
+
+# Campus Places Routes
+@app.route('/places')
+def campus_places():
+    """Campus Places page showing all places"""
+    try:
+        data = load_places_data()
+        places = data.get('places', [])
+        
+        # Sort by upload date (newest first)
+        places = sorted(places, key=lambda x: x.get('date_added', ''), reverse=True)
+        
+        return render_template('campus_places.html', places=places)
+    except Exception as e:
+        app.logger.error(f"Error loading places data: {str(e)}")
+        flash('Error loading places information', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/places/add', methods=['POST'])
+def add_place():
+    """Add new campus place"""
+    try:
+        place_name = request.form.get('place_name', '').strip()
+        place_description = request.form.get('place_description', '').strip()
+        maps_link = request.form.get('maps_link', '').strip()
+        
+        if not place_name:
+            flash('Place name is required', 'error')
+            return redirect(url_for('campus_places'))
+        
+        # Handle optional file upload
+        photo_filename = None
+        photo_path = None
+        
+        if 'place_photo' in request.files:
+            file = request.files['place_photo']
+            if file and file.filename and file.filename != '':
+                # Check file extension
+                file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+                if file_ext not in ['jpg', 'jpeg', 'png']:
+                    flash('Only JPG and PNG images are allowed', 'error')
+                    return redirect(url_for('campus_places'))
+                
+                # Create places directory if it doesn't exist
+                places_dir = os.path.join(UPLOAD_FOLDER, 'places')
+                os.makedirs(places_dir, exist_ok=True)
+                
+                # Generate secure filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                secure_name = secure_filename(file.filename)
+                photo_filename = f"place_{timestamp}_{secure_name}"
+                photo_path = os.path.join(places_dir, photo_filename)
+                
+                # Save file
+                file.save(photo_path)
+        
+        # Load existing data
+        data = load_places_data()
+        
+        # Create new place entry
+        new_place = {
+            'id': data.get('next_id', 1),
+            'name': place_name,
+            'description': place_description,
+            'maps_link': maps_link,
+            'photo_filename': photo_filename,
+            'photo_path': photo_path,
+            'date_added': datetime.now().isoformat()
+        }
+        
+        # Add to data
+        if 'places' not in data:
+            data['places'] = []
+        
+        data['places'].append(new_place)
+        data['next_id'] = data.get('next_id', 1) + 1
+        
+        # Save data
+        save_places_data(data)
+        
+        flash('Campus place added successfully!', 'success')
+        return redirect(url_for('campus_places'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding place: {str(e)}")
+        flash('Error adding place', 'error')
+        return redirect(url_for('campus_places'))
+
+@app.route('/places/delete/<int:place_id>', methods=['POST'])
+def delete_place(place_id):
+    """Delete campus place (admin only)"""
+    try:
+        data = load_places_data()
+        place_found = False
+        place_to_delete = None
+        
+        for i, place in enumerate(data.get('places', [])):
+            if place['id'] == place_id:
+                place_to_delete = data['places'].pop(i)
+                place_found = True
+                break
+        
+        if not place_found:
+            return jsonify({'success': False, 'error': 'Place not found'}), 404
+        
+        # Delete photo file if exists
+        if place_to_delete and place_to_delete.get('photo_path'):
+            photo_path = place_to_delete['photo_path']
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                except Exception as e:
+                    app.logger.warning(f"Could not delete photo file: {str(e)}")
+        
+        # Save updated data
+        save_places_data(data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting place: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/places/photo/<filename>')
+def place_photo(filename):
+    """Serve place photos securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        places_dir = os.path.join(UPLOAD_FOLDER, 'places')
+        file_path = os.path.join(places_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Place photo not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within places directory
+        places_dir_abs = os.path.abspath(places_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(places_dir_abs):
+            app.logger.warning(f"File path outside places directory: {file_path_abs}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(places_dir_abs, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving place photo {filename}: {str(e)}")
         return f"Error serving file: {str(e)}", 500
 
 if __name__ == '__main__':
