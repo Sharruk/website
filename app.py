@@ -139,6 +139,27 @@ def save_places_data(data):
         app.logger.error(f"Error saving places data: {str(e)}")
         raise
 
+def load_hostels_data():
+    """Load hostels data from JSON file"""
+    try:
+        if os.path.exists('hostels.json'):
+            with open('hostels.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"hostels": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading hostels data: {str(e)}")
+        return {"hostels": [], "next_id": 1}
+
+def save_hostels_data(data):
+    """Save hostels data to JSON file"""
+    try:
+        with open('hostels.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving hostels data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -2130,6 +2151,172 @@ def place_photo(filename):
         return send_from_directory(places_dir_abs, filename, as_attachment=False)
     except Exception as e:
         app.logger.error(f"Error serving place photo {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
+
+# Hostel Information Routes
+@app.route('/hostels')
+def hostel_info():
+    """Hostel Information page showing all hostels"""
+    try:
+        data = load_hostels_data()
+        hostels = data.get('hostels', [])
+        
+        # Sort by upload date (newest first)
+        hostels = sorted(hostels, key=lambda x: x.get('date_added', ''), reverse=True)
+        
+        return render_template('hostel_info.html', hostels=hostels)
+    except Exception as e:
+        app.logger.error(f"Error loading hostels data: {str(e)}")
+        flash('Error loading hostel information', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/hostels/add', methods=['POST'])
+def add_hostel():
+    """Add new hostel information"""
+    try:
+        hostel_name = request.form.get('hostel_name', '').strip()
+        hostel_category = request.form.get('hostel_category', '').strip()
+        hostel_description = request.form.get('hostel_description', '').strip()
+        maps_link = request.form.get('maps_link', '').strip()
+        basic_rules = request.form.get('basic_rules', '').strip()
+        
+        # Get facilities (checkboxes)
+        facilities = request.form.getlist('facilities')
+        
+        if not hostel_name:
+            flash('Hostel name is required', 'error')
+            return redirect(url_for('hostel_info'))
+        
+        if not hostel_category or hostel_category not in ['Boys', 'Girls']:
+            flash('Please select a valid hostel category', 'error')
+            return redirect(url_for('hostel_info'))
+        
+        # Handle required file upload
+        if 'hostel_photo' not in request.files:
+            flash('Hostel photo is required', 'error')
+            return redirect(url_for('hostel_info'))
+        
+        file = request.files['hostel_photo']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('hostel_info'))
+        
+        # Check file extension
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        if file_ext not in ['jpg', 'jpeg', 'png']:
+            flash('Only JPG and PNG images are allowed', 'error')
+            return redirect(url_for('hostel_info'))
+        
+        # Create hostels directory if it doesn't exist
+        hostels_dir = os.path.join(UPLOAD_FOLDER, 'hostels')
+        os.makedirs(hostels_dir, exist_ok=True)
+        
+        # Generate secure filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        secure_name = secure_filename(file.filename)
+        photo_filename = f"hostel_{timestamp}_{secure_name}"
+        photo_path = os.path.join(hostels_dir, photo_filename)
+        
+        # Save file
+        file.save(photo_path)
+        
+        # Load existing data
+        data = load_hostels_data()
+        
+        # Create new hostel entry
+        new_hostel = {
+            'id': data.get('next_id', 1),
+            'name': hostel_name,
+            'category': hostel_category,
+            'description': hostel_description,
+            'maps_link': maps_link,
+            'facilities': facilities,
+            'basic_rules': basic_rules,
+            'photo_filename': photo_filename,
+            'photo_path': photo_path,
+            'date_added': datetime.now().isoformat()
+        }
+        
+        # Add to data
+        if 'hostels' not in data:
+            data['hostels'] = []
+        
+        data['hostels'].append(new_hostel)
+        data['next_id'] = data.get('next_id', 1) + 1
+        
+        # Save data
+        save_hostels_data(data)
+        
+        flash('Hostel information added successfully!', 'success')
+        return redirect(url_for('hostel_info'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding hostel: {str(e)}")
+        flash('Error adding hostel information', 'error')
+        return redirect(url_for('hostel_info'))
+
+@app.route('/hostels/delete/<int:hostel_id>', methods=['POST'])
+def delete_hostel(hostel_id):
+    """Delete hostel information (admin only)"""
+    try:
+        data = load_hostels_data()
+        hostel_found = False
+        hostel_to_delete = None
+        
+        for i, hostel in enumerate(data.get('hostels', [])):
+            if hostel['id'] == hostel_id:
+                hostel_to_delete = data['hostels'].pop(i)
+                hostel_found = True
+                break
+        
+        if not hostel_found:
+            return jsonify({'success': False, 'error': 'Hostel not found'}), 404
+        
+        # Delete photo file if exists
+        if hostel_to_delete and hostel_to_delete.get('photo_path'):
+            photo_path = hostel_to_delete['photo_path']
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                except Exception as e:
+                    app.logger.warning(f"Could not delete photo file: {str(e)}")
+        
+        # Save updated data
+        save_hostels_data(data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting hostel: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/hostels/photo/<filename>')
+def hostel_photo(filename):
+    """Serve hostel photos securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        hostels_dir = os.path.join(UPLOAD_FOLDER, 'hostels')
+        file_path = os.path.join(hostels_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Hostel photo not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within hostels directory
+        hostels_dir_abs = os.path.abspath(hostels_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(hostels_dir_abs):
+            app.logger.warning(f"File path outside hostels directory: {file_path_abs}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(hostels_dir_abs, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving hostel photo {filename}: {str(e)}")
         return f"Error serving file: {str(e)}", 500
 
 if __name__ == '__main__':
