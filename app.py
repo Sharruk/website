@@ -160,6 +160,27 @@ def save_hostels_data(data):
         app.logger.error(f"Error saving hostels data: {str(e)}")
         raise
 
+def load_events_data():
+    """Load events data from JSON file"""
+    try:
+        if os.path.exists('events.json'):
+            with open('events.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"events": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading events data: {str(e)}")
+        return {"events": [], "next_id": 1}
+
+def save_events_data(data):
+    """Save events data to JSON file"""
+    try:
+        with open('events.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving events data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -2317,6 +2338,201 @@ def hostel_photo(filename):
         return send_from_directory(hostels_dir_abs, filename, as_attachment=False)
     except Exception as e:
         app.logger.error(f"Error serving hostel photo {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
+
+# Upcoming Events Routes
+@app.route('/events')
+def upcoming_events():
+    """Upcoming Events page showing all events"""
+    try:
+        data = load_events_data()
+        events = data.get('events', [])
+        
+        # Sort events by date (upcoming first)
+        from datetime import datetime
+        current_time = datetime.now()
+        
+        # Parse dates and sort
+        upcoming_events = []
+        past_events = []
+        
+        for event in events:
+            try:
+                event_datetime = datetime.fromisoformat(event.get('event_datetime', ''))
+                if event_datetime >= current_time:
+                    upcoming_events.append(event)
+                else:
+                    past_events.append(event)
+            except:
+                # If date parsing fails, treat as upcoming
+                upcoming_events.append(event)
+        
+        # Sort upcoming events by date (nearest first)
+        upcoming_events.sort(key=lambda x: x.get('event_datetime', ''))
+        # Sort past events by date (most recent first)
+        past_events.sort(key=lambda x: x.get('event_datetime', ''), reverse=True)
+        
+        # Combine lists (upcoming first)
+        sorted_events = upcoming_events + past_events
+        
+        return render_template('upcoming_events.html', events=sorted_events, upcoming_count=len(upcoming_events))
+    except Exception as e:
+        app.logger.error(f"Error loading events data: {str(e)}")
+        flash('Error loading events', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/events/add', methods=['POST'])
+def add_event():
+    """Add new event"""
+    try:
+        event_name = request.form.get('event_name', '').strip()
+        event_description = request.form.get('event_description', '').strip()
+        event_date = request.form.get('event_date', '').strip()
+        event_time = request.form.get('event_time', '').strip()
+        event_category = request.form.get('event_category', '').strip()
+        registration_link = request.form.get('registration_link', '').strip()
+        
+        if not event_name:
+            flash('Event name is required', 'error')
+            return redirect(url_for('upcoming_events'))
+        
+        if not event_date or not event_time:
+            flash('Event date and time are required', 'error')
+            return redirect(url_for('upcoming_events'))
+        
+        # Valid categories
+        valid_categories = ['Tech Fest', 'Cultural Fest', 'Hackathon', 'Orientation', 'Induction', 'Entrance Exam', 'Others']
+        if not event_category or event_category not in valid_categories:
+            flash('Please select a valid event category', 'error')
+            return redirect(url_for('upcoming_events'))
+        
+        # Combine date and time
+        try:
+            from datetime import datetime
+            event_datetime = datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M").isoformat()
+        except ValueError:
+            flash('Invalid date or time format', 'error')
+            return redirect(url_for('upcoming_events'))
+        
+        # Handle optional poster upload
+        poster_filename = None
+        if 'poster_image' in request.files:
+            file = request.files['poster_image']
+            if file and file.filename != '':
+                # Check file extension
+                file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+                if file_ext not in ['jpg', 'jpeg', 'png']:
+                    flash('Only JPG and PNG images are allowed for poster', 'error')
+                    return redirect(url_for('upcoming_events'))
+                
+                # Create events directory if it doesn't exist
+                events_dir = os.path.join(UPLOAD_FOLDER, 'events')
+                os.makedirs(events_dir, exist_ok=True)
+                
+                # Generate secure filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                secure_name = secure_filename(file.filename)
+                poster_filename = f"event_{timestamp}_{secure_name}"
+                poster_path = os.path.join(events_dir, poster_filename)
+                
+                # Save file
+                file.save(poster_path)
+        
+        # Load existing data
+        data = load_events_data()
+        
+        # Create new event entry
+        new_event = {
+            'id': data.get('next_id', 1),
+            'name': event_name,
+            'description': event_description,
+            'event_datetime': event_datetime,
+            'category': event_category,
+            'registration_link': registration_link,
+            'poster_filename': poster_filename,
+            'date_added': datetime.now().isoformat()
+        }
+        
+        # Add to data
+        if 'events' not in data:
+            data['events'] = []
+        
+        data['events'].append(new_event)
+        data['next_id'] = data.get('next_id', 1) + 1
+        
+        # Save data
+        save_events_data(data)
+        
+        flash('Event added successfully!', 'success')
+        return redirect(url_for('upcoming_events'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding event: {str(e)}")
+        flash('Error adding event', 'error')
+        return redirect(url_for('upcoming_events'))
+
+@app.route('/events/delete/<int:event_id>', methods=['POST'])
+def delete_event(event_id):
+    """Delete event (admin only)"""
+    try:
+        data = load_events_data()
+        event_found = False
+        event_to_delete = None
+        
+        for i, event in enumerate(data.get('events', [])):
+            if event['id'] == event_id:
+                event_to_delete = data['events'].pop(i)
+                event_found = True
+                break
+        
+        if not event_found:
+            return jsonify({'success': False, 'error': 'Event not found'}), 404
+        
+        # Delete poster file if exists
+        if event_to_delete and event_to_delete.get('poster_filename'):
+            poster_path = os.path.join(UPLOAD_FOLDER, 'events', event_to_delete['poster_filename'])
+            if os.path.exists(poster_path):
+                try:
+                    os.remove(poster_path)
+                except Exception as e:
+                    app.logger.warning(f"Could not delete poster file: {str(e)}")
+        
+        # Save updated data
+        save_events_data(data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting event: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/events/poster/<filename>')
+def event_poster(filename):
+    """Serve event poster images securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        events_dir = os.path.join(UPLOAD_FOLDER, 'events')
+        file_path = os.path.join(events_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Event poster not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within events directory
+        events_dir_abs = os.path.abspath(events_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(events_dir_abs):
+            app.logger.warning(f"File path outside events directory: {file_path_abs}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(events_dir_abs, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving event poster {filename}: {str(e)}")
         return f"Error serving file: {str(e)}", 500
 
 if __name__ == '__main__':
