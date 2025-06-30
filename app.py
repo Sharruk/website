@@ -97,6 +97,27 @@ def save_transportation_data(data):
         app.logger.error(f"Error saving transportation data: {str(e)}")
         raise
 
+def load_canteen_data():
+    """Load canteen data from JSON file"""
+    try:
+        if os.path.exists('canteen.json'):
+            with open('canteen.json', 'r') as f:
+                return json.load(f)
+        else:
+            return {"canteens": [], "next_id": 1}
+    except Exception as e:
+        app.logger.error(f"Error loading canteen data: {str(e)}")
+        return {"canteens": [], "next_id": 1}
+
+def save_canteen_data(data):
+    """Save canteen data to JSON file"""
+    try:
+        with open('canteen.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving canteen data: {str(e)}")
+        raise
+
 def load_data():
     """Load data from JSON file"""
     try:
@@ -1786,6 +1807,158 @@ def bus_route_detail(file_id):
         app.logger.error(f"Error loading bus route detail: {str(e)}")
         flash('Error loading file details', 'error')
         return redirect(url_for('bus_routes'))
+
+# Canteen Routes
+@app.route('/canteen')
+def canteen():
+    """Canteen page showing all canteens"""
+    try:
+        data = load_canteen_data()
+        canteens = data.get('canteens', [])
+        
+        # Sort by upload date (newest first)
+        canteens = sorted(canteens, key=lambda x: x.get('date_added', ''), reverse=True)
+        
+        return render_template('canteen.html', canteens=canteens)
+    except Exception as e:
+        app.logger.error(f"Error loading canteen data: {str(e)}")
+        flash('Error loading canteen information', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/canteen/add', methods=['POST'])
+def add_canteen():
+    """Add new canteen (admin functionality)"""
+    try:
+        canteen_name = request.form.get('canteen_name', '').strip()
+        canteen_description = request.form.get('canteen_description', '').strip()
+        
+        if not canteen_name:
+            flash('Canteen name is required', 'error')
+            return redirect(url_for('canteen'))
+        
+        # Handle file upload
+        if 'canteen_photo' not in request.files:
+            flash('Canteen photo is required', 'error')
+            return redirect(url_for('canteen'))
+        
+        file = request.files['canteen_photo']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('canteen'))
+        
+        # Check file extension
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        if file_ext not in ['jpg', 'jpeg', 'png']:
+            flash('Only JPG and PNG images are allowed', 'error')
+            return redirect(url_for('canteen'))
+        
+        # Create canteen directory if it doesn't exist
+        canteen_dir = os.path.join(UPLOAD_FOLDER, 'canteen')
+        os.makedirs(canteen_dir, exist_ok=True)
+        
+        # Generate secure filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        secure_name = secure_filename(file.filename)
+        filename = f"canteen_{timestamp}_{secure_name}"
+        file_path = os.path.join(canteen_dir, filename)
+        
+        # Save file
+        file.save(file_path)
+        
+        # Load existing data
+        data = load_canteen_data()
+        
+        # Create new canteen entry
+        new_canteen = {
+            'id': data.get('next_id', 1),
+            'name': canteen_name,
+            'description': canteen_description,
+            'photo_filename': filename,
+            'photo_path': file_path,
+            'date_added': datetime.now().isoformat()
+        }
+        
+        # Add to data
+        if 'canteens' not in data:
+            data['canteens'] = []
+        
+        data['canteens'].append(new_canteen)
+        data['next_id'] = data.get('next_id', 1) + 1
+        
+        # Save data
+        save_canteen_data(data)
+        
+        flash('Canteen added successfully!', 'success')
+        return redirect(url_for('canteen'))
+        
+    except Exception as e:
+        app.logger.error(f"Error adding canteen: {str(e)}")
+        flash('Error adding canteen', 'error')
+        return redirect(url_for('canteen'))
+
+@app.route('/canteen/delete/<int:canteen_id>', methods=['POST'])
+def delete_canteen(canteen_id):
+    """Delete canteen (admin only)"""
+    try:
+        data = load_canteen_data()
+        canteen_found = False
+        canteen_to_delete = None
+        
+        for i, canteen in enumerate(data.get('canteens', [])):
+            if canteen['id'] == canteen_id:
+                canteen_to_delete = data['canteens'].pop(i)
+                canteen_found = True
+                break
+        
+        if not canteen_found:
+            return jsonify({'success': False, 'error': 'Canteen not found'}), 404
+        
+        # Delete photo file if exists
+        if canteen_to_delete and canteen_to_delete.get('photo_path'):
+            photo_path = canteen_to_delete['photo_path']
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                except Exception as e:
+                    app.logger.warning(f"Could not delete photo file: {str(e)}")
+        
+        # Save updated data
+        save_canteen_data(data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting canteen: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/canteen/photo/<filename>')
+def canteen_photo(filename):
+    """Serve canteen photos securely"""
+    try:
+        # Security check: ensure filename doesn't contain path traversal
+        if '..' in filename or filename.startswith('/'):
+            app.logger.warning(f"Invalid file path attempted: {filename}")
+            return "Invalid file path", 400
+        
+        canteen_dir = os.path.join(UPLOAD_FOLDER, 'canteen')
+        file_path = os.path.join(canteen_dir, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            app.logger.error(f"Canteen photo not found: {file_path}")
+            return "File not found", 404
+        
+        # Verify file is within canteen directory
+        canteen_dir_abs = os.path.abspath(canteen_dir)
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(canteen_dir_abs):
+            app.logger.warning(f"File path outside canteen directory: {file_path_abs}")
+            return "Invalid file path", 400
+            
+        return send_from_directory(canteen_dir_abs, filename, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error serving canteen photo {filename}: {str(e)}")
+        return f"Error serving file: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
