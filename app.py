@@ -1317,9 +1317,26 @@ def uploaded_file(filename):
 @app.route('/community')
 def community():
     """Community discussion page"""
-    community_data = load_community_data()
-    discussions = community_data.get('discussions', [])
-    return render_template('community.html', discussions=discussions)
+    try:
+        community_data = load_community_data()
+        discussions = community_data.get('discussions', [])
+        
+        # Get sorting parameter
+        sort_by = request.args.get('sort', 'latest')
+        
+        # Sort discussions based on selected option
+        if sort_by == 'replies':
+            discussions = sorted(discussions, key=lambda x: len(x.get('replies', [])), reverse=True)
+        elif sort_by == 'likes':
+            discussions = sorted(discussions, key=lambda x: x.get('likes', 0), reverse=True)
+        else:  # latest (default)
+            discussions = sorted(discussions, key=lambda x: x.get('date', ''), reverse=True)
+        
+        return render_template('community.html', discussions=discussions, current_sort=sort_by)
+    except Exception as e:
+        app.logger.error(f"Error loading community data: {str(e)}")
+        flash('Error loading community discussions', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/community/create', methods=['POST'])
 def create_discussion():
@@ -1349,6 +1366,8 @@ def create_discussion():
             'title': title,
             'description': description,
             'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'likes': 0,
+            'dislikes': 0,
             'replies': []
         }
         
@@ -1385,11 +1404,17 @@ def add_discussion_reply():
                 if 'replies' not in discussion:
                     discussion['replies'] = []
                 
+                # Generate unique reply ID within discussion
+                reply_id = len(discussion['replies']) + 1
+                
                 # Add new reply
                 new_reply = {
+                    'id': reply_id,
                     'name': name,
                     'message': message,
-                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'likes': 0,
+                    'dislikes': 0
                 }
                 
                 discussion['replies'].append(new_reply)
@@ -1404,6 +1429,52 @@ def add_discussion_reply():
         
     except Exception as e:
         app.logger.error(f"Error adding reply: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/community/reply/vote/<int:discussion_id>/<int:reply_id>', methods=['POST'])
+def vote_reply(discussion_id, reply_id):
+    """Vote on a community reply"""
+    try:
+        data = request.json
+        vote_type = data.get('vote_type')  # 'like' or 'dislike'
+        
+        if vote_type not in ['like', 'dislike']:
+            return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
+        
+        community_data = load_community_data()
+        
+        # Find the discussion and reply
+        reply_found = False
+        for discussion in community_data.get('discussions', []):
+            if discussion['id'] == discussion_id:
+                for reply in discussion.get('replies', []):
+                    if reply['id'] == reply_id:
+                        reply_found = True
+                        
+                        # Initialize vote counts if not present
+                        if 'likes' not in reply:
+                            reply['likes'] = 0
+                        if 'dislikes' not in reply:
+                            reply['dislikes'] = 0
+                        
+                        # Update vote count
+                        if vote_type == 'like':
+                            reply['likes'] += 1
+                        else:  # dislike
+                            reply['dislikes'] += 1
+                        
+                        break
+                break
+        
+        if not reply_found:
+            return jsonify({'success': False, 'error': 'Reply not found'}), 404
+        
+        save_community_data(community_data)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error voting on reply: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/clubs')
